@@ -1,0 +1,80 @@
+@model Market.Models.PropertyUpdateDto
+
+<h2>Edycja lokalu</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+    
+    <div class="form-group">
+        <label asp-for="Description">Opis mieszkania</label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="RentPrice">Kwota najmu</label>
+        <input asp-for="RentPrice" class="form-control" />
+        <span asp-validation-for="RentPrice" class="text-danger"></span>
+    </div>
+    <button type="submit" asp-route-id="@Model.Id" class="btn btn-primary">Zapisz zmiany</button>
+</form>
+
+<hr />
+
+<h2>Obecny najemca</h2>
+
+@if (Model.RentalAgreement != null)
+{
+    <p><strong>Imię i nazwisko:</strong> @Model.RentalAgreement.Tenant.FullName</p>
+    <p><strong>Data wynajmu od:</strong> @Model.RentalAgreement.StartDate.ToString("yyyy-MM-dd")</p>
+    <p><strong>Data wynajmu do:</strong> @(Model.RentalAgreement.EndDate?.ToString("yyyy-MM-dd") ?? "Brak")</p>
+    <form asp-action="RemoveTenant" method="post" style="margin-top: 10px;">
+        <input type="hidden" name="propertyId" value="@Model.Id" />
+        <button type="submit" class="btn btn-danger">Usuń najemcę</button>
+    </form>
+}
+else
+{
+    <p>Brak przypisanego najemcy.</p>
+}
+<hr />
+
+<h2>Zarządzaj zgłoszeniami serwisowymi</h2>
+
+@if (Model.MaintenanceRequest != null)
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Data przyjęcia</th>
+            <th>Opis zgłoszenia</th>
+            <th>Status</th>
+            <th>Akcje</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var request in Model.MaintenanceRequest)
+        {
+            <tr>
+                <td>@request.StartDate.ToString("yyyy-MM-dd")</td>
+                <td>@request.Description</td>
+                <td>@request.Status</td>
+                <td>
+                    <form asp-action="UpdateRequestStatus" method="post" style="display:inline;">
+                        <input type="hidden" name="requestId" value="@request.Id" />
+                        <select name="newStatus" class="form-control" style="width: auto; display: inline;">
+                            <option value="Nowe">Nowe</option>
+                            <option value="W trakcie">W trakcie</option>
+                            <option value="Zakończone">Zakończone</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Zmień status</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Brak zgłoszeń serwisowych dla tego lokalu.</p>
+}

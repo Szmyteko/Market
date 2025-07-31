@@ -1,0 +1,35 @@
+@model dynamic
+
+<h2>Twoje lokale</h2>
+@foreach (var property in ViewBag.OwnerProperties)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5>@property.Address</h5>
+            <p>Kwota czynszu: @property.RentPrice zł</p>
+            <p>Najemca: @property.User?.UserName</p>
+            <a asp-action="Remind" asp-route-id="@property.Id" class="btn btn-warning">Przypomnij o płatności</a>
+        </div>
+    </div>
+}
+
+<h2>Historia wpływów</h2>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Data</th>
+        <th>Kwota</th>
+        <th>Najemca</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var income in ViewBag.OwnerIncome)
+    {
+        <tr>
+            <td>@income.Date.ToString("yyyy-MM-dd")</td>
+            <td>@income.Amount zł</td>
+            <td>@income.User?.UserName</td>
+        </tr>
+    }
+    </tbody>
+</table>    

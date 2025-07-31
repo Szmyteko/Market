@@ -1,0 +1,77 @@
+@model Market.Models.Property
+
+@{
+    ViewData["Title"] = "Dodaj nowe ogłoszenie";
+}
+
+@* Dodajemy kontener, który wyśrodkuje formularz i nada mu odpowiednią szerokość *@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+
+            @* Używamy karty (card) z cieniem, aby formularz ładnie wyróżniał się na stronie *@
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2 class="my-2">Nowe ogłoszenie</h2>
+                    <p class="mb-1">Wypełnij poniższe pola, aby dodać nową nieruchomość.</p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+
+                        @* Po zakończeniu debugowania, wracamy do "ModelOnly". 
+                           Błędy poszczególnych pól będą wyświetlane pod nimi. *@
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Address" class="form-control" placeholder="Adres" />
+                            <label asp-for="Address">Adres</label>
+                            <span asp-validation-for="Address" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="RentPrice" class="form-control" placeholder="Cena najmu (zł)" type="number" />
+                                    <label asp-for="RentPrice">Cena najmu (zł)</label>
+                                    <span asp-validation-for="RentPrice" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Size" class="form-control" placeholder="Metraż (m²)" type="number" />
+                                    <label asp-for="Size">Metraż (m²)</label>
+                                    <span asp-validation-for="Size" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <textarea asp-for="Description" class="form-control" placeholder="Opis" style="height: 120px;"></textarea>
+                            <label asp-for="Description">Opis</label>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a asp-action="MyListings" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> Anuluj
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle-fill"></i> Dodaj ogłoszenie
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small">Pamiętaj o podaniu dokładnych informacji.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Ta sekcja jest kluczowa dla walidacji po stronie klienta *@
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,36 @@
+@model IEnumerable<Market.Models.Property>
+
+@{
+    ViewBag.Title = "Moje lokale";
+    Layout = "_Layout";
+}
+
+<h1>Moje ogłoszenia</h1>
+<a asp-action="Create" class="btn btn-success">Dodaj nowe ogłoszenie</a>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Adres</th>
+        <th>Cena najmu</th>
+        <th>Metraż</th>
+        <th>Status</th>
+        <th>Najemca</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var property in Model)
+    {
+        <tr>
+            <td>@property.Address</td>
+            <td>@property.RentPrice zł</td>
+            <td>@property.Size m²</td>
+            <td>@(property.IsAvailable ? "Dostępny" : "Wynajęty")</td>
+            <td>
+                <a asp-action="Details" asp-route-id="@property.Id" class="btn btn-primary">Szczegóły</a>
+                <a asp-action="Edit" asp-route-id="@property.Id" class="btn btn-primary">Zarządzaj</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

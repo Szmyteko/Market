@@ -1,0 +1,45 @@
+@model IEnumerable<Market.Models.Payment>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Data</th>
+        <th>Kwota</th>
+        <th>Najemca</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var payment in Model)
+    {
+        <tr>
+            <td>@payment.Date.ToString("yyyy-MM-dd")</td> <!-- Bez HasValue -->
+            <td>@payment.Amount zł</td>
+            <td>@payment.Tenant.FullName</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+
+<h2>Historia płatności</h2>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Data</th>
+        <th>Kwota</th>
+        <th>Najemca</th>
+        <th>Wynajmujący</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var payment in ViewBag.AllPayments)
+    {
+        <tr>
+            <td>@payment.Date.ToString("yyyy-MM-dd")</td>
+            <td>@payment.Amount zł</td>
+            <td>@payment.User?.UserName</td>
+            <td>@payment.RentalAgreement?.Property.User.UserName</td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -1,0 +1,35 @@
+@model IEnumerable<dynamic>
+
+@{
+    ViewBag.Title = "Lista użytkowników";
+}
+
+<h2>Lista użytkowników</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Nazwa użytkownika</th>
+        <th>Email</th>
+        <th>Numer telefonu</th>
+        <th>Role</th>
+        <th>Akcje</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr>
+            <td>@user.User.UserName</td>
+            <td>@user.User.Email</td>
+            <td>@user.User.PhoneNumber</td>
+            <td>@string.Join(", ", user.Roles)</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@user.User.Id" class="btn btn-success">Edytuj</a>
+                <a asp-action="Delete" asp-route-id="@user.User.Id" class="btn btn-danger">Usuń</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+<a asp-action="Create" class="btn btn-primary">Utwórz użytkownika</a>

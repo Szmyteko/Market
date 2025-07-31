@@ -1,0 +1,16 @@
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model Microsoft.AspNetCore.Identity.IdentityUser
+
+@{
+    ViewBag.Title = "Usuń użytkownika";
+}
+
+<h2>Usuń użytkownika</h2>
+
+<p>Czy na pewno chcesz usunąć użytkownika <strong>@Model.UserName</strong>?</p>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button type="submit" class="btn btn-danger">Usuń</button>
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+</form>

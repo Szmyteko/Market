@@ -1,0 +1,29 @@
+@model IEnumerable<Market.Models.RentalAgreement>
+
+<h2>Lista wynajmów</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Adres lokalu</th>
+        <th>Najemca</th>
+        <th>Data rozpoczęcia</th>
+        <th>Data zakończenia</th>
+        <th>Czynsz</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var agreement in Model)
+    {
+        <tr>
+            <td>@agreement.Property.Address</td>
+            <td>@agreement.Tenant.FullName</td>
+            <td>@agreement.StartDate</td>
+            <td>@(agreement.EndDate.HasValue ? agreement.EndDate.Value.ToString("yyyy-MM-dd") : "Brak")</td>
+            <td>@agreement.MonthlyRent zł</td>
+            <td>@(agreement.Property.IsAvailable ? "Dostępny" : "Zajęty")</td>
+        </tr>
+    }
+    </tbody>
+</table>

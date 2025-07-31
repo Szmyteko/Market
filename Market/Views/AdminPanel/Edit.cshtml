@@ -1,0 +1,135 @@
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model Microsoft.AspNetCore.Identity.IdentityUser
+
+@{
+    ViewBag.Title = "Edytuj użytkownika";
+}
+
+<h2>Edytuj użytkownika</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <div class="form-group">
+        <label for="UserName">Nazwa użytkownika</label>
+        <input type="text" name="userName" class="form-control" value="@Model.UserName" required />
+    </div>
+    <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" name="email" class="form-control" value="@Model.Email" required />
+    </div>
+    <div class="form-group">
+        <label for="PhoneNumber">Numer telefonu</label>
+        <input type="text" name="phoneNumber" class="form-control" value="@Model.PhoneNumber" />
+    </div>
+
+    <div class="form-group">
+        <label for="Role">Rola użytkownika</label>
+        <select name="selectedRole" class="form-control">
+            <option value="">Wybierz rolę</option>
+            @foreach (var role in ViewBag.Roles as IEnumerable<SelectListItem>)
+            {
+                <option value="@role.Value">@role.Text</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+</form>
+
+<hr />
+
+<h3>Lokale użytkownika</h3>
+@if (ViewBag.Properties != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Adres</th>
+                <th>Cena najmu</th>
+                <th>Metraż</th>
+                <th>Dostępność</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var property in ViewBag.Properties)
+            {
+                <tr>
+                    <td>@property.Address</td>
+                    <td>@property.RentPrice zł</td>
+                    <td>@property.Size m²</td>
+                    <td>@(property.IsAvailable ? "Dostępny" : "Zajęty")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Użytkownik nie ma przypisanych lokali.</p>
+}
+
+<hr />
+
+<h3>Umowy najmu</h3>
+@if (ViewBag.RentalAgreements != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Adres lokalu</th>
+                <th>Najemca</th>
+                <th>Data rozpoczęcia</th>
+                <th>Data zakończenia</th>
+                <th>Czynsz miesięczny</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var agreement in ViewBag.RentalAgreements)
+            {
+                <tr>
+                    <td>@agreement.Property.Address</td>
+                    <td>@agreement.Tenant.FullName</td>
+                    <td>@agreement.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td>@agreement.EndDate?.ToString("yyyy-MM-dd") ?? "Brak"</td>
+                    <td>@agreement.MonthlyRent zł</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Użytkownik nie ma przypisanych umów najmu.</p>
+}
+
+<hr />
+
+<h3>Płatności</h3>
+@if (ViewBag.Payments != null )
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Kwota</th>
+                <th>Powiązana umowa</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in ViewBag.Payments)
+            {
+                <tr>
+                    <td>@payment.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@payment.Amount zł</td>
+                    <td>@payment.RentalAgreementId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Brak zarejestrowanych płatności dla użytkownika.</p>
+}

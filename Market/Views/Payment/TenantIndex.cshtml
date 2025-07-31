@@ -1,0 +1,33 @@
+@model dynamic
+
+<h2>Twoje wynajmy</h2>
+@foreach (var agreement in ViewBag.TenantAgreements)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5>@agreement.Property.Address</h5>
+            <p>Czynsz: @agreement.MonthlyRent zł</p>
+            <p>Data płatności: @agreement.StartDate.AddMonths(1).ToString("yyyy-MM-dd")</p>
+            <a asp-action="Pay" asp-route-id="@agreement.Id" class="btn btn-success">Opłać</a>
+        </div>
+    </div>
+}
+
+<h2>Historia płatności</h2>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Data</th>
+        <th>Kwota</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var payment in ViewBag.TenantPayments)
+    {
+        <tr>
+            <td>@payment.Date.ToString("yyyy-MM-dd")</td>
+            <td>@payment.Amount zł</td>
+        </tr>
+    }
+    </tbody>
+</table>

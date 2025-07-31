@@ -1,0 +1,39 @@
+# Pliki generowane przez systemy operacyjne
+.DS_Store
+Thumbs.db
+
+# Pliki generowane przez IDE i narzêdzia .NET
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.dll
+*.exe
+*.pdb
+*.obj
+*.log
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.pch
+*.aps
+*.tmp
+*.bak
+*.cache
+*.vs
+.vs/
+.vscode/
+build/
+Build/
+build/
+[Bb]in/
+[Oo]bj/
+[Rr]elease/
+[Dd]ebug/
+
+# Pliki konfiguracyjne, które nie powinny byæ w repozytorium
+appsettings.Development.json
+secrets.json
+user-secrets/

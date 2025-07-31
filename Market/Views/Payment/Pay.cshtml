@@ -1,0 +1,23 @@
+@model Market.Models.Payment
+
+@{
+    var rentalAgreement = ViewBag.RentalAgreement;
+}
+
+<h2>Dokonaj płatności</h2>
+
+<p>Adres nieruchomości: @rentalAgreement.Property.Address</p>
+<p>Kwota czynszu: @rentalAgreement.MonthlyRent zł</p>
+
+<form asp-action="Pay" method="post">
+    <input type="hidden" name="rentalAgreementId" value="@rentalAgreement.Id" />
+    <input type="hidden" name="amount" value="@rentalAgreement.MonthlyRent" />
+
+    <div class="form-group">
+        <label for="PaymentDate">Data płatności</label>
+        <input type="date" name="paymentDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+    </div>
+
+    <button type="submit" class="btn btn-success">Zapłać</button>
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+</form>
