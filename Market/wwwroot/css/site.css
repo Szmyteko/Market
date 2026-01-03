@@ -1,22 +1,282 @@
+/* site.css (rozbudowana, spójna baza pod Bootstrap 5) */
+
+/* === Bazowe === */
 html {
-  font-size: 14px;
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background: #f8fafc;
+}
+
+/* === Focus states (zostawione + lekkie ujednolicenie) === */
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem #258cfb;
+}
+
+/* === Typografia i nag³ówki stron === */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: .75rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+
+.page-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.muted {
+    color: rgba(0,0,0,.6);
+}
+
+/* === Kontener i stopka === */
+main.container {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+}
+
+.footer {
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,.08);
+}
+
+/* === Nawigacja / navbar === */
+.navbar {
+    background: #fff !important;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+
+    .navbar .nav-link {
+        color: rgba(0,0,0,.75);
+    }
+
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus {
+            color: rgba(0,0,0,.95);
+        }
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+/* === Karty, sekcje, “pude³ka” === */
+.card {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: .9rem;
+}
+
+    .card.shadow-soft {
+        box-shadow: 0 10px 30px rgba(2, 6, 23, .06);
+    }
+
+.section {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: .9rem;
+    padding: 1rem;
+}
+
+/* === Przyciski – subtelne poprawki spójnoœci === */
+.btn {
+    border-radius: .7rem;
+}
+
+.btn-sm {
+    border-radius: .65rem;
+}
+
+/* === Formularze === */
+.form-control,
+.form-select {
+    border-radius: .7rem;
+}
+
+.form-label {
+    font-weight: 600;
+}
+
+/* === Tabele (listy og³oszeñ / admin) === */
+.table {
+    background: #fff;
+    border-radius: .9rem;
+    overflow: hidden;
+}
+
+    .table thead th {
+        font-size: .85rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: rgba(0,0,0,.6);
+        background: rgba(2,6,23,.03);
+    }
+
+    .table tbody tr:hover {
+        background: rgba(37, 140, 251, .06);
+    }
+
+/* === Badges (statusy) === */
+.badge {
+    border-radius: 999px;
+    padding: .45em .7em;
+    font-weight: 600;
+}
+
+/* === HERO (np. Home/Index) === */
+.hero {
+    position: relative;
+    min-height: 70vh;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 4rem 1rem;
+    background: linear-gradient(180deg, rgba(37,140,251,.08), rgba(37,140,251,0));
+    border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+.hero-title {
+    font-weight: 800;
+    letter-spacing: .03em;
+    margin-bottom: .5rem;
+}
+
+.hero-subtitle {
+    color: rgba(0,0,0,.65);
+    max-width: 46rem;
+    margin: 0 auto 1.5rem auto;
+}
+
+/* === Karty og³oszeñ (grid zamiast tabeli) === */
+.listing-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .listing-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .listing-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.listing-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: .9rem;
+    overflow: hidden;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+    .listing-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 35px rgba(2,6,23,.10);
+    }
+
+    .listing-card .listing-body {
+        padding: 1rem;
+    }
+
+.listing-title {
+    font-weight: 700;
+    margin: 0 0 .25rem 0;
+}
+
+.listing-meta {
+    color: rgba(0,0,0,.6);
+    font-size: .95rem;
+    margin-bottom: .5rem;
+}
+
+.listing-price {
+    font-weight: 800;
+    margin-bottom: .75rem;
+}
+
+.listing-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* === Chat / wiadomoœci (Conversations/Thread) === */
+.chat-window {
+    max-height: 60vh;
+    overflow: auto;
+    padding: .25rem;
+}
+
+.chat-row {
+    display: flex;
+    margin-bottom: .5rem;
+}
+
+    .chat-row.mine {
+        justify-content: flex-end;
+    }
+
+    .chat-row.theirs {
+        justify-content: flex-start;
+    }
+
+.chat-bubble {
+    max-width: 70%;
+    padding: .6rem .75rem;
+    border-radius: .9rem;
+    border: 1px solid rgba(0,0,0,.08);
+    background: #fff;
+}
+
+.chat-row.mine .chat-bubble {
+    background: rgba(37,140,251,.12);
+    border-color: rgba(37,140,251,.25);
+}
+
+.chat-meta {
+    font-size: .75rem;
+    color: rgba(0,0,0,.55);
+    margin-top: .2rem;
+}
+
+/* === Pomocnicze === */
+.rounded-xl {
+    border-radius: 1rem;
+}
+
+.shadow-soft {
+    box-shadow: 0 10px 30px rgba(2, 6, 23, .06);
+}
+
+.border-soft {
+    border: 1px solid rgba(0,0,0,.08);
+}
+
+.bg-surface {
+    background: #fff;
 }

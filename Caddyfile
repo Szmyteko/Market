@@ -1,0 +1,3 @@
+aptmarket.tech, www.aptmarket.tech {
+    reverse_proxy market:8080
+}

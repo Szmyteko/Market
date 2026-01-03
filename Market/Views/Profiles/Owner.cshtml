@@ -1,0 +1,89 @@
+﻿@using Market.Models
+@model Market.ViewModels.OwnerProfileVm
+
+@{
+    ViewData["Title"] = "Profil właściciela";
+    var isOwner = User?.Identity?.IsAuthenticated == true &&
+                  Model.UserId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isLogged = User?.Identity?.IsAuthenticated == true;
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (Model.VerificationStatus == VerificationStatus.Verified)
+{
+    <span class="text-primary fw-semibold">★ Zweryfikowany</span>
+}
+else if (Model.VerificationStatus == VerificationStatus.Unverified)
+{
+    <span class="text-danger fw-semibold">Niezweryfikowany</span>
+    @if (isOwner)
+    {
+        <a class="btn btn-outline-primary btn-sm ms-2" asp-controller="Verification" asp-action="New">Weryfikuj</a>
+    }
+}
+else
+{
+    <span class="text-warning fw-semibold">Weryfikacja w toku</span>
+    @if (isOwner)
+    {
+        <a class="btn btn-outline-primary btn-sm ms-2" asp-controller="Verification" asp-action="Status">Zobacz status</a>
+    }
+}
+
+<div class="card mb-3 mt-2">
+    <div class="card-body d-flex align-items-center justify-content-between">
+        <div>
+            <h4 class="card-title mb-2">@Model.DisplayName</h4>
+            <div class="d-flex gap-4">
+                <div>Wszystkie ogłoszenia: <strong>@Model.TotalListings</strong></div>
+                <div>Aktywne: <strong>@Model.ActiveListings</strong></div>
+                <div>Archiwum: <strong>@(ViewBag.ArchivedCount ?? 0)</strong></div>
+            </div>
+        </div>
+
+        @* przycisk wiadomości dla osób innych niż właściciel *@
+        @if (isLogged && !isOwner)
+        {
+            <form asp-controller="Conversations" asp-action="Start" method="post" class="mb-0">
+                <input type="hidden" name="toUserId" value="@Model.UserId" />
+                <button class="btn btn-outline-secondary btn-sm">Napisz wiadomość</button>
+            </form>
+        }
+    </div>
+</div>
+
+@if (!(Model.Listings?.Any() ?? false))
+{
+    <div class="alert alert-info">Ten właściciel nie ma opublikowanych ogłoszeń.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Adres</th>
+            <th>Cena</th>
+            <th>Metraż</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in Model.Listings)
+        {
+            <tr>
+                <td>@p.Address</td>
+                <td>@(p.RentPrice?.ToString("C", new System.Globalization.CultureInfo("pl-PL")))</td>
+                <td>@p.Size m²</td>
+                <td>Aktywne</td>
+                <td>
+                    <a asp-controller="Property" asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-primary">
+                        Szczegóły
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

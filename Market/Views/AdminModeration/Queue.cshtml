@@ -1,0 +1,44 @@
+﻿@model IEnumerable<Market.Models.Property>
+
+<h2>Moderacja ogłoszeń</h2>
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Adres</th>
+            <th>Właściciel</th>
+            <th>Cena</th>
+            <th>Metraż</th>
+            <th class="text-end">Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Address</td>
+                <td>@(p.User?.UserName ?? p.User?.Email)</td>
+                <td>@(p.RentPrice?.ToString("C"))</td>
+                <td>@p.Size m²</td>
+                <td class="text-end">
+                    <a asp-controller="Property" asp-action="Details" asp-route-id="@p.Id"
+                       class="btn btn-sm btn-outline-secondary me-2">Szczegóły</a>
+
+                    <form asp-action="Approve" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <button class="btn btn-sm btn-success">Zatwierdź</button>
+                    </form>
+
+                    <form asp-action="Reject" method="post" class="d-inline ms-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <input type="text" name="reason" class="form-control form-control-sm d-inline w-auto"
+                               placeholder="powód" required />
+                        <button class="btn btn-sm btn-outline-danger ms-1">Odrzuć</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

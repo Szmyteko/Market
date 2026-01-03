@@ -1,55 +1,286 @@
 @model Market.Models.Property
+@using System.Globalization
+@using Market.Models
 
 @{
-    ViewBag.Title = "title";
-    Layout = "_Layout";
+    ViewData["Title"] = "Szczegóły nieruchomości";
+    var meId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isLogged = User.Identity?.IsAuthenticated == true;
+    var isOwner = isLogged && Model.UserId == meId;
 }
 
-<h2>Kontakt z właścicielem</h2>
-@if (Model.User != null)
-{
-    <p>Nazwa użytkownika : @Model.User.UserName</p>
-    <p>Email: @Model.User.Email</p>
-    <p>Numer telefonu: @Model.User.PhoneNumber</p>
-}
-else
-{
-    <p>Dane właściciela są niedostępne.</p>
-}
+<h2>@ViewData["Title"]</h2>
 
-<h1>Informacje o lokalu</h1>
-<p>Adres: @Model.Address</p>
-<p>Cena najmu: @Model.RentPrice zł</p>
-<p>Metraż: @Model.Size m²</p>
-<p>Opis: @Model.Description</p>
+@if (TempData["RequestError"] is string err) { <div class="alert alert-danger">@err</div> }
+@if (TempData["RequestOk"]   is string ok)  { <div class="alert alert-success">@ok</div> }
 
-@if (ViewBag.IsOwner)
-{
-    <h2>Zgłoszenia serwisowe</h2>
-    <ul>
-        @foreach (var request in Model.ServiceRequests)
-        {
-            <li>
-                @request.Description - Status: @request.Status
-                <form asp-action="UpdateRequestStatus" method="post">
-                    <input type="hidden" name="requestId" value="@request.Id" />
-                    <select name="status">
-                        <option value="Nowe">Nowe</option>
-                        <option value="W trakcie">W trakcie</option>
-                        <option value="Wykonane">Wykonane</option>
-                    </select>
-                    <button type="submit" class="btn btn-sm btn-secondary">Aktualizuj</button>
-                </form>
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <form asp-action="CreateServiceRequest" method="post">
-        <input type="hidden" name="propertyId" value="@Model.Id" />
-        <textarea name="description" class="form-control" placeholder="Opis zgłoszenia"></textarea>
-        <button type="submit" class="btn btn-primary">Wyślij zgłoszenie</button>
-    </form>
-}
+<div class="card-body">
+    <h4 class="card-title">@Model.Address</h4>
 
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    { <p class="card-text">@Model.Description</p> }
+
+    <dl class="row">
+        <dt class="col-sm-4">Cena za dobę</dt>
+        <dd class="col-sm-8">@Model.RentPrice?.ToString("C", new CultureInfo("pl-PL"))</dd>
+
+        <dt class="col-sm-4">Metraż</dt>
+        <dd class="col-sm-8">@Model.Size <span>m²</span></dd>
+
+        <dt class="col-sm-4">Właściciel</dt>
+        <dd class="col-sm-8">
+            @if (!string.IsNullOrEmpty(Model.UserId))
+            {
+                <a asp-controller="Profiles" asp-action="Owner" asp-route-id="@Model.UserId">
+                    @(Model.User?.UserName ?? Model.User?.Email ?? "Profil właściciela")
+                </a>
+
+                @* przycisk wiadomości dla gości *@
+                @if (isLogged && !isOwner)
+                {
+                    <form asp-controller="Conversations" asp-action="Start" method="post" class="d-inline ms-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="toUserId" value="@Model.UserId" />
+                        <button class="btn btn-outline-secondary btn-sm">Napisz wiadomość</button>
+                    </form>
+                }
+                else if (!isLogged)
+                {
+                    <a class="btn btn-outline-secondary btn-sm ms-2"
+                       asp-area="Identity" asp-page="/Account/Login"
+                       asp-route-returnUrl="@Url.Action("Details","Property", new { id = Model.Id })">
+                        Zaloguj, aby napisać
+                    </a>
+                }
+            }
+            else { <span>—</span> }
+        </dd>
+
+        <dt class="col-sm-4">Status</dt>
+        <dd class="col-sm-8">
+            @if (Model.ApprovalStatus == ListingApprovalStatus.Approved)
+            { <span class="badge bg-success">Zatwierdzone</span> }
+            else if (Model.ApprovalStatus == ListingApprovalStatus.Rejected)
+            { <span class="badge bg-danger">Odrzucone</span> }
+            else { <span class="badge bg-warning text-dark">Oczekuje</span> }
+
+            @if (Model.IsDeleted)
+            { <span class="badge bg-secondary ms-1">Zarchiwizowane</span> }
+        </dd>
+    </dl>
+
+    @{
+        var imgs = (Model.Images ?? new List<PropertyImage>())
+            .OrderBy(i => i.SortOrder).ThenBy(i => i.Id).ToList();
+    }
+    @if (imgs.Count > 0)
+    {
+        <div id="propCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
+            <div class="carousel-inner rounded border">
+                @for (int i = 0; i < imgs.Count; i++)
+                {
+                    var img = imgs[i];
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                        <img src="@img.Url" class="d-block w-100"
+                             alt="Zdjęcie nieruchomości @Model.Address"
+                             style="object-fit:cover; max-height:520px;">
+                    </div>
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#propCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Poprzednie</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#propCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Następne</span>
+            </button>
+        </div>
+    }
+    else { <div class="text-muted border rounded p-3 mb-3">Brak zdjęć.</div> }
+
+    @* Udogodnienia z pól bool *@
+    @{
+        var amenityItems = new List<string>();
+        if (Model.HasWifi) amenityItems.Add("Wi-Fi");
+        if (Model.HasPrivateBathroom) amenityItems.Add("Prywatna łazienka");
+        if (Model.HasBalcony) amenityItems.Add("Balkon");
+    }
+    @if (amenityItems.Count > 0)
+    {
+        <div class="border-top pt-3 mt-3">
+            <h5>Udogodnienia</h5>
+            <div>
+                @foreach (var a in amenityItems)
+                { <span class="badge bg-light text-dark border me-1 mb-1">@a</span> }
+            </div>
+        </div>
+    }
+
+    @* Uwagi dodatkowe *@
+    @if (!string.IsNullOrWhiteSpace(Model.AmenitiesNote))
+    {
+        <div class="border-top pt-3 mt-3">
+            <h5>Uwagi</h5>
+            <div class="text-muted">@Model.AmenitiesNote</div>
+        </div>
+    }
+
+    @* REZERWACJA *@
+    @if (isLogged && !isOwner && !Model.IsDeleted && Model.ApprovalStatus == ListingApprovalStatus.Approved)
+    {
+        <div class="border-top pt-3 mt-3">
+            <h5>Rezerwacja</h5>
+            <form id="rentForm" asp-controller="RentalRequest" asp-action="Create" method="post" class="row g-2">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="propertyId" value="@Model.Id" />
+                <div class="col-6">
+                    <label class="form-label">Od</label>
+                    <input class="form-control" type="text" name="startDate" id="startDate"
+                           placeholder="dd.mm.rrrr" required autocomplete="off"
+                           oninvalid="this.setCustomValidity('Wybierz datę rozpoczęcia')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Do</label>
+                    <input class="form-control" type="text" name="endDate" id="endDate"
+                           placeholder="dd.mm.rrrr" required autocomplete="off"
+                           oninvalid="this.setCustomValidity('Wybierz datę zakończenia')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Wyślij prośbę</button>
+                </div>
+
+                <div class="w-100"></div>
+                <div class="col-12">
+                    <small id="pricePreview" class="form-text text-muted"></small>
+                    <div class="mt-2">
+                        <span class="me-2">Zajęte:</span>
+                        <div id="blockedBadges" class="d-inline"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    }
+    else if (!isLogged && !Model.IsDeleted && Model.ApprovalStatus == ListingApprovalStatus.Approved)
+    {
+        <a asp-area="Identity" asp-page="/Account/Login"
+           asp-route-returnUrl="@Url.Action("Details", "Property", new { id = Model.Id })"
+           class="btn btn-outline-primary">
+            Zaloguj, aby wynająć
+        </a>
+    }
+</div>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+    @if (isOwner)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edytuj</a>
+        <form asp-action="Delete" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-danger">Usuń</button>
+        </form>
+    }
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .flatpickr-day.booked { background:#dc2626; color:#fff; }
+    .flatpickr-day.booked.flatpickr-disabled { cursor:not-allowed; }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pl.js"></script>
+    <script>
+        (function () {
+            const sInput = document.getElementById('startDate');
+            const eInput = document.getElementById('endDate');
+            const p = document.getElementById('pricePreview');
+            const form = document.getElementById('rentForm');
+            const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
+            let blocks = [];
+
+            const toISO = (d) => d.toISOString().slice(0, 10);
+            const parseISO = (iso) => { const [y,m,dd]=iso.split('-').map(Number); return new Date(y, m-1, dd); };
+
+            function initPickers() {
+                const disableRanges = (blocks || []).map(b => ({ from: b.start, to: b.end }));
+                function onDayCreate(_, __, ___, dayElem) {
+                    const iso = toISO(dayElem.dateObj);
+                    if (blocks.some(b => iso >= b.start && iso <= b.end)) dayElem.classList.add('booked');
+                }
+
+                const fpStart = flatpickr(sInput, {
+                    locale: "pl", minDate: "today", disable: disableRanges, onDayCreate,
+                    altInput: true, altFormat: "d.m.Y", dateFormat: "Y-m-d", allowInput: false,
+                    onChange: function (selectedDates) {
+                        if (!selectedDates.length) return;
+                        const d = selectedDates[0];
+                        fpEnd.set('minDate', d);
+                        const endSel = fpEnd.selectedDates[0];
+                        if (endSel && endSel < d) fpEnd.clear();
+                        show();
+                    }
+                });
+
+                var fpEnd = flatpickr(eInput, {
+                    locale: "pl", minDate: "today", disable: disableRanges, onDayCreate,
+                    altInput: true, altFormat: "d.m.Y", dateFormat: "Y-m-d", allowInput: false, onChange: show
+                });
+
+                if (submitBtn) submitBtn.disabled = true;
+                show();
+
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        if (!sInput.value || !eInput.value) { e.preventDefault(); sInput.reportValidity(); eInput.reportValidity(); }
+                    });
+                }
+
+                function nights() {
+                    if (!sInput.value || !eInput.value) return 0;
+                    const sd = parseISO(sInput.value), ed = parseISO(eInput.value);
+                    const ms = ed - sd; return ms > 0 ? Math.ceil(ms / 86400000) : 0;
+                }
+                function overlaps(startIso, endIso) {
+                    if (!blocks || blocks.length === 0) return false;
+                    return blocks.some(b => startIso <= b.end && b.start <= endIso);
+                }
+                function show() {
+                    if (!sInput.value || !eInput.value) { p.textContent = ''; if (submitBtn) submitBtn.disabled = true; return; }
+                    const n = nights();
+                    if (n > 0) {
+                        const sVal = sInput.value, eVal = eInput.value;
+                        if (overlaps(sVal, eVal)) { p.textContent = 'Wybrany zakres jest zajęty.'; if (submitBtn) submitBtn.disabled = true; return; }
+                        if (submitBtn) submitBtn.disabled = false;
+                        const price = @((Model.RentPrice ?? 0m).ToString(CultureInfo.InvariantCulture));
+                        const sum = (n * parseFloat(price)).toFixed(2);
+                        p.textContent = 'Liczba dób: ' + n + ' • Szacunkowa suma: ' + sum;
+                    } else { p.textContent = ''; if (submitBtn) submitBtn.disabled = true; }
+                }
+            }
+
+            function renderBadges() {
+                const container = document.getElementById('blockedBadges');
+                if (!container) return;
+                container.innerHTML = '';
+                (blocks || []).forEach(b => {
+                    const el = document.createElement('span');
+                    el.className = 'badge bg-danger me-1';
+                    el.textContent = `${b.start} – ${b.end}`;
+                    container.appendChild(el);
+                });
+            }
+
+            fetch('@Url.Action("BlockedRanges", "Property", new { id = Model.Id })')
+                .then(r => r.json())
+                .then(d => { blocks = Array.isArray(d) ? d : []; renderBadges(); initPickers(); })
+                .catch(() => { blocks = []; initPickers(); });
+        })();
+    </script>
+}

@@ -1,38 +1,78 @@
-@model IEnumerable<Property>
+@model IEnumerable<Market.Models.Property>
+@using System.Globalization
+@using Market.Models
+
 @{
-    ViewBag.Title = "Lista nieruchomości";
-    Layout = "_Layout";
-}
-<!-- STRONA Z OGŁOSZENIAMI WSZYSTKIMI WYLISTOWANYMI -->
-
-<h2>Lista nieruchomości</h2>
-<br/>
-
-@if (User.IsInRole("Wynajmujący") || User.IsInRole("Admin"))
-{
-    <a asp-action="Create" class="btn btn-outline-primary">Utwórz ogłoszenie</a>
+    ViewData["Title"] = "Ogłoszenia";
+    var avail = ViewBag.AvailableToday as IDictionary<int, bool> ?? new Dictionary<int, bool>();
+    var next = ViewBag.NextFreeFrom as IDictionary<int, DateOnly?> ?? new Dictionary<int, DateOnly?>();
+    var ver = ViewBag.OwnerVerification as IDictionary<string, VerificationStatus>
+                ?? new Dictionary<string, VerificationStatus>();
 }
 
-<table class="table">
-    <thead>
-    <tr>
-        <th>Adres</th>
-        <th>Cena najmu</th>
-        <th>Metraż</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var property in Model)
+@section PageActions {
+    @if (User.Identity?.IsAuthenticated == true)
     {
-        <tr>
-            <td>@property.Address</td>
-            <td>@property.RentPrice</td>
-            <td>@property.Size</td>
-            <td>
-                <a asp-action="Details" asp-route-id="@property.Id" class="btn btn-primary">Szczegóły</a>
-                <a asp-action="Rent" asp-controller="RentalAgreement" asp-route-id="@property.Id" class="btn btn-primary">Wynajmij</a>
-            </td>
-        </tr>
+        <a asp-action="Create" class="btn btn-primary btn-sm">Dodaj ogłoszenie</a>
     }
-    </tbody>
-</table>
+}
+
+<div class="listing-grid">
+    @foreach (var p in Model)
+    {
+        var isFree = avail.TryGetValue(p.Id, out var v) ? v : true;
+        next.TryGetValue(p.Id, out var nf);
+
+        <div class="listing-card">
+            <div class="listing-body">
+                <div class="listing-title">@p.Address</div>
+
+                <div class="listing-meta">
+                    Metraż: @p.Size m²
+                </div>
+
+                <div class="listing-price">
+                    @(p.RentPrice?.ToString("C", new CultureInfo("pl-PL")))
+                </div>
+
+                <div class="listing-meta">
+                    @if (isFree)
+                    {
+                        <span class="badge text-bg-success">Dostępny</span>
+                    }
+                    else if (nf.HasValue)
+                    {
+                        <span class="badge text-bg-warning">Dostępny od @nf.Value.ToString("yyyy-MM-dd")</span>
+                    }
+                    else
+                    {
+                        <span class="badge text-bg-secondary">Niedostępny</span>
+                    }
+                </div>
+
+                <div class="mt-3 d-flex align-items-center justify-content-between gap-2">
+                    <div class="small">
+                        @if (!string.IsNullOrEmpty(p.UserId))
+                        {
+                            <a class="text-decoration-none" asp-controller="Profiles" asp-action="Owner" asp-route-id="@p.UserId">
+                                Właściciel
+                                @if (ver.TryGetValue(p.UserId, out var st) && st == VerificationStatus.Verified)
+                                {
+                                    <span class="text-primary ms-1">★</span>
+                                }
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Właściciel: —</span>
+                        }
+                    </div>
+
+                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-primary btn-sm">
+                        Szczegóły
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

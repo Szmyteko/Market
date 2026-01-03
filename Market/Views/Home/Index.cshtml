@@ -1,9 +1,25 @@
 ﻿@{
-    ViewData["Title"] = "Strona główna";
+    
+    ViewData["Title"] = "";
 }
-<!-- STRONA POWITALNA -->
 
-<div class="text-center">
-    <h1 class="display-4">Witaj w APT-Market!</h1>
-    <p>Aby przeglądać ogłoszenia na tej stronie musisz być zalogowany. Jeśli nie posiadasz jescze konta zarejestruj się jako najemca lub wynajmujący.</p>
-</div>
+<section class="hero">
+    <div class="container">
+        <h1 class="display-5 hero-title">APT-Market</h1>
+
+        @if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            <div class="mt-4 d-flex justify-content-center gap-2 flex-wrap">
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg">Zaloguj się</a>
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-primary btn-lg">Stwórz konto</a>
+            </div>
+        }
+        else
+        {
+            <div class="mt-4 d-flex justify-content-center gap-2 flex-wrap">
+                <a asp-controller="Property" asp-action="Index" class="btn btn-primary btn-lg">Przeglądaj ogłoszenia</a>
+                <a asp-controller="Property" asp-action="Create" class="btn btn-outline-primary btn-lg">Dodaj ogłoszenie</a>
+            </div>
+        }
+    </div>
+</section>

@@ -11,6 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include=".dockerignore" />
+    <None Include="Caddyfile" />
+    <None Include="docker-compose.prod.yml" />
     <None Include="docker-compose.yml" />
   </ItemGroup>
 </Project>

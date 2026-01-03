@@ -1,6 +1,51 @@
-@{
-    ViewBag.Title = "Płatności";
-    Layout = "_Layout";
+@model IEnumerable<Market.Models.Payment>
+@using Market.Models
+
+@functions {
+    // Jeśli masz enum PaymentStatus
+    string PayBadge(PaymentStatus s) => s switch
+    {
+        PaymentStatus.Paid => "badge bg-success",
+        PaymentStatus.Pending => "badge bg-warning text-dark",
+        _ => "badge bg-secondary"
+    };
+    // Jeśli Status jest stringiem, użyj tej wersji zamiast powyższej:
+    string PayBadgeStr(string s) => s == "Paid" ? "badge bg-success"
+        : s == "Pending" ? "badge bg-warning text-dark"
+        : "badge bg-secondary";
 }
-<!-- TUTAJ NAJEMCY MAJĄ HISTORIĘ I NADZCHODZĄCE PŁATNOŚCI Z DATAMI, A WYNAJMUJĄCY NADCHODZĄCE OD NAJEMCÓW I HISTORIĘ WPŁYWÓW Z DATAMI -->
-<h2>Płatności</h2>
+
+
+@{
+    ViewData["Title"] = "Moje płatności";
+}
+<h2>@ViewData["Title"]</h2>
+<table class="table">
+    <thead><tr><th>Ogłoszenie</th><th>Tytuł</th><th>Kwota</th><th>Termin</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Property?.Address</td>
+                <td>@p.Title</td>
+                <td>@p.Amount.ToString("C")</td>
+                <td>@p.DueDate.ToString("yyyy-MM-dd")</td>
+                <td><span class="@PayBadge(p.Status)">@p.Status</span></td>
+                <td>
+                    @if (p.Status == PaymentStatus.Pending)
+                    {
+                        <form asp-action="Pay" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button class="btn btn-sm btn-primary">Opłać</button>
+                        </form>
+                    }
+                    else if (p.Status == PaymentStatus.Paid && p.PaidUtc.HasValue)
+                    {
+                        <small>Opłacono @p.PaidUtc.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

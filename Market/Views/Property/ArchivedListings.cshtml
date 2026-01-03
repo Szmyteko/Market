@@ -1,0 +1,49 @@
+﻿@model IEnumerable<Market.Models.Property>
+@{
+    ViewData["Title"] = "Archiwalne lokale";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!Model.Any())
+{
+    <p>Brak archiwalnych lokali.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Adres</th>
+                <th>Cena</th>
+                <th>Metraż</th>
+                <th>Data archiwizacji</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.Address</td>
+                    <td>@(p.RentPrice?.ToString("C"))</td>
+                    <td>@p.Size m²</td>
+                    <td>
+                        @(p.DeletedUtc.HasValue
+                                        ? p.DeletedUtc.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                        : "—")
+            </td>
+            <td>
+                <form asp-controller="Property" asp-action="Restore" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@p.Id" />
+                    <button type="submit" class="btn btn-sm btn-success">Przywróć ogłoszenie</button>
+                </form>
+                <a asp-controller="Property" asp-action="Details" asp-route-id="@p.Id"
+                   class="btn btn-sm btn-outline-secondary">Szczegóły</a>
+            </td>
+        </tr>
+                }
+        </tbody>
+    </table>
+}

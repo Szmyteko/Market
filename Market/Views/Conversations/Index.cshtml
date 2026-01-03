@@ -1,0 +1,30 @@
+@model IEnumerable<Market.ViewModels.Conversations.ThreadListItemVm>
+@{ ViewData["Title"] = "Wiadomości"; }
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Brak rozmów.</div>
+}
+else
+{
+    <table class="table align-middle">
+        <thead><tr><th>Użytkownik</th><th>Ostatnia</th><th>Data</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.OtherUserName</td>
+                <td>@(t.LastBody is null ? "-" : (t.LastBody.Length > 80 ? t.LastBody[..80] + "…" : t.LastBody))</td>
+                <td>@(t.LastAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                <td>
+                    <a class="btn btn-sm btn-primary" asp-action="Thread" asp-route-id="@t.ConversationId">
+                        Otwórz @if (t.UnreadCount>0){<span class="badge bg-light text-dark ms-1">@t.UnreadCount</span>}
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

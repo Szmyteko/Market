@@ -1,0 +1,17 @@
+@model Market.Models.VerificationRequest
+<h3>@(Model.User?.Email ?? Model.UserId)</h3>
+<div class="d-flex gap-3 mb-3">
+    <img src="@Url.Action("Doc","Verification", new { id=Model.Id, side="front" })" class="img-thumbnail" style="max-width:320px" />
+    <img src="@Url.Action("Doc","Verification", new { id=Model.Id, side="back"  })" class="img-thumbnail" style="max-width:320px" />
+</div>
+<form asp-action="Decide" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <div class="mb-2">
+        <label class="form-label">Powód odrzucenia</label>
+        <input class="form-control" name="reason" />
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" name="approve" value="true" type="submit">Zatwierdź</button>
+        <button class="btn btn-danger"  name="approve" value="false" type="submit">Odrzuć</button>
+    </div>
+</form>

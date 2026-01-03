@@ -1,0 +1,18 @@
+@using Market.Models
+@model VerificationRequest
+<h3>Status weryfikacji</h3>
+@if (TempData["Err"] is string e) { <div class="alert alert-warning">@e</div> }
+@if (Model is null)
+{
+    <p>Brak zgłoszeń. <a asp-action="New">Złóż wniosek</a>.</p>
+}
+else
+{
+    <p><strong>Status:</strong> @Model.Status</p>
+    @if (Model.Status==VerificationStatus.Rejected && !string.IsNullOrWhiteSpace(Model.RejectReason))
+    { <p><strong>Powód odrzucenia:</strong> @Model.RejectReason</p> }
+    <div class="d-flex gap-3">
+        <img src="@Url.Action("Doc","Verification", new { id=Model.Id, side="front" })" class="img-thumbnail" style="max-width:260px" />
+        <img src="@Url.Action("Doc","Verification", new { id=Model.Id, side="back"  })" class="img-thumbnail" style="max-width:260px" />
+    </div>
+}

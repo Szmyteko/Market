@@ -1,0 +1,60 @@
+﻿@model Market.ViewModels.PropertyDatesVM
+@using Market.Models
+@{
+    ViewData["Title"] = "Daty rezerwacji";
+    string Badge(RentalRequestStatus s) => s switch
+    {
+        RentalRequestStatus.Pending => "badge bg-warning text-dark",
+        RentalRequestStatus.Approved => "badge bg-success",
+        RentalRequestStatus.Rejected => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+    string Label(RentalRequestStatus s) => s switch
+    {
+        RentalRequestStatus.Pending => "Oczekujące",
+        RentalRequestStatus.Approved => "Zatwierdzone",
+        RentalRequestStatus.Rejected => "Odrzucone",
+        _ => s.ToString()
+    };
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted mb-2">@Model.Address</p>
+
+@if (Model.Items.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Użytkownik</th>
+                    <th>Od</th>
+                    <th>Do</th>
+                    <th>Status</th>
+                    <th>Utworzone</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Items)
+                {
+                    <tr>
+                        <td>@r.UserName <small class="text-muted">(@r.UserId)</small></td>
+                        <td>@r.StartDate.ToString("dd.MM.yyyy")</td>
+                        <td>@r.EndDate.ToString("dd.MM.yyyy")</td>
+                        <td><span class="@Badge(r.Status)">@Label(r.Status)</span></td>
+                        <td>@r.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+
+    <div class="text-muted">Brak zgłoszeń.</div>
+}
+
+<div class="mt-3">
+    <a asp-action="MyListings" class="btn btn-secondary">Powrót</a>
+</div>

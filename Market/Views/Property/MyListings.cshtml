@@ -1,36 +1,111 @@
 @model IEnumerable<Market.Models.Property>
+@using Market.Models
 
 @{
-    ViewBag.Title = "Moje lokale";
-    Layout = "_Layout";
+    ViewData["Title"] = "Moje lokale";
+    var availability = ViewBag.Availability as IDictionary<int, bool> ?? new Dictionary<int, bool>();
 }
 
-<h1>Moje ogłoszenia</h1>
-<a asp-action="Create" class="btn btn-success">Dodaj nowe ogłoszenie</a>
+@functions {
+    string BadgeClass(Property p) => p.IsDeleted ? "badge bg-secondary"
+        : p.ApprovalStatus == ListingApprovalStatus.Approved ? "badge bg-success"
+        : p.ApprovalStatus == ListingApprovalStatus.Rejected ? "badge bg-danger"
+        : "badge bg-warning text-dark";
 
-<table class="table">
+    string BadgeLabel(Property p) => p.IsDeleted ? "Archiwum"
+        : p.ApprovalStatus == ListingApprovalStatus.Approved ? "Dostępne"
+        : p.ApprovalStatus == ListingApprovalStatus.Rejected ? "Odrzucone"
+        : "Oczekujące";
+
+    string Btn(string f) =>
+        string.Equals((ViewBag.Filter as string) ?? "all", f, StringComparison.OrdinalIgnoreCase)
+        ? "btn btn-sm btn-primary me-1"
+        : "btn btn-sm btn-outline-secondary me-1";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">@ViewData["Title"]</h2>
+    <div>
+        <a asp-action="Create" class="btn btn-sm btn-primary">Dodaj nowe ogłoszenie</a>
+    </div>
+</div>
+
+<div class="mb-3">
+    <a asp-action="MyListings" asp-route-filter="all" class="@Btn("all")">Wszystkie</a>
+    <a asp-action="MyListings" asp-route-filter="available" class="@Btn("available")">Dostępne</a>
+    <a asp-action="MyListings" asp-route-filter="pending" class="@Btn("pending")">Oczekujące</a>
+    <a asp-action="MyListings" asp-route-filter="rejected" class="@Btn("rejected")">Odrzucone</a>
+    <a asp-action="MyListings" asp-route-filter="archived" class="@Btn("archived")">Archiwum</a>
+</div>
+
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success">@TempData["Ok"]</div>
+}
+@if (TempData["Err"] != null)
+{
+    <div class="alert alert-danger">@TempData["Err"]</div>
+}
+
+<table class="table table-sm align-middle">
     <thead>
-    <tr>
-        <th>Adres</th>
-        <th>Cena najmu</th>
-        <th>Metraż</th>
-        <th>Status</th>
-        <th>Najemca</th>
-    </tr>
+        <tr>
+            <th>Adres</th>
+            <th>Cena najmu</th>
+            <th>Metraż</th>
+            <th>Dostępność dziś</th>
+            <th>Status</th>
+            <th class="text-end">Akcje</th>
+        </tr>
     </thead>
     <tbody>
-    @foreach (var property in Model)
-    {
-        <tr>
-            <td>@property.Address</td>
-            <td>@property.RentPrice zł</td>
-            <td>@property.Size m²</td>
-            <td>@(property.IsAvailable ? "Dostępny" : "Wynajęty")</td>
-            <td>
-                <a asp-action="Details" asp-route-id="@property.Id" class="btn btn-primary">Szczegóły</a>
-                <a asp-action="Edit" asp-route-id="@property.Id" class="btn btn-primary">Zarządzaj</a>
-            </td>
-        </tr>
-    }
+        @foreach (var p in Model)
+        {
+            var free = availability.TryGetValue(p.Id, out var val) ? val : true;
+            <tr>
+                <td>@p.Address</td>
+                <td>@(p.RentPrice?.ToString("C"))</td>
+                <td>@p.Size m²</td>
+                <td>@(free ? "Dostępny" : "Zajęty")</td>
+                <td>
+                    <span class="@BadgeClass(p)">@BadgeLabel(p)</span>
+
+                    @if (!p.IsDeleted && p.ApprovalStatus == ListingApprovalStatus.Rejected)
+                    {
+                        if (!string.IsNullOrWhiteSpace(p.ModerationNote))
+                        {
+                            <div class="small text-muted mt-1">Powód: @p.ModerationNote</div>
+                        }
+                        <form asp-action="Resubmit" method="post" class="mt-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button class="btn btn-sm btn-outline-primary">Wyślij ponownie do akceptacji</button>
+                        </form>
+                    }
+                </td>
+                <td class="text-end">
+                    <a asp-controller="Property" asp-action="Dates" asp-route-id="@p.Id" class="btn btn-outline-info btn-sm">Daty</a>
+                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Szczegóły</a>
+
+                    @if (!p.IsDeleted)
+                    {
+                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-warning">Zarządzaj</a>
+                        <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Przenieść do archiwum?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Usuń</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Restore" method="post" class="d-inline" onsubmit="return confirm('Przywrócić ogłoszenie?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button type="submit" class="btn btn-sm btn-success">Przywróć</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

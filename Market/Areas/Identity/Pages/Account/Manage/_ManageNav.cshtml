@@ -1,0 +1,20 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@{
+    var uid = UserManager.GetUserId(User);
+    var hasExternal = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+}
+
+<ul class="nav nav-pills flex-column">
+    <!-- Ustawienia konta (Identity) -->
+    <li class="nav-item"><a class="nav-link" asp-page="./Index">Profil konta</a></li>
+    <li class="nav-item"><a class="nav-link" asp-page="./Email">E-mail</a></li>
+    <li class="nav-item"><a class="nav-link" asp-page="./ChangePassword">Hasło</a></li>
+    @if (hasExternal)
+    {
+        <li class="nav-item"><a class="nav-link" asp-page="./ExternalLogins">Logowania zewnętrzne</a></li>
+    }
+    <li class="nav-item"><a class="nav-link" asp-page="./TwoFactorAuthentication">Uwierzytelnianie 2FA</a></li>
+    <li class="nav-item"><a class="nav-link" asp-page="./PersonalData">Dane osobowe</a></li>
+</ul>

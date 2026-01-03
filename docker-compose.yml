@@ -1,34 +1,36 @@
 services:
   market:
-    # Usuni�cie 'image: market' jest dobr� praktyk� w trybie deweloperskim,
-    # aby mie� pewno��, �e obraz jest zawsze budowany na podstawie Dockerfile.
     build:
       context: .
       dockerfile: Market/Dockerfile
     ports:
       - "8081:8080"
     volumes:
-      # --- NAJWA�NIEJSZA ZMIANA ---
-      # Mapuje lokalny folder z kodem do folderu wewn�trz kontenera.
-      # Zak�adam, �e Tw�j kod jest w folderze 'Market', a WORKDIR w Dockerfile to '/app'.
       - ./Market:/src/Market
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db;Database=MarketDb;User ID=sa;Password=Silnehaslo!123;TrustServerCertificate=True
-      # Zmienna zapewniaj�ca, �e dotnet watch poprawnie wykrywa zmiany plik�w
+      - ConnectionStrings__DefaultConnection=Server=db;Database=MarketDb;User ID=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - Seed__AdminEmail=${SEED_ADMIN_EMAIL}
+      - Seed__AdminPassword=${SEED_ADMIN_PASSWORD}
       - DOTNET_USE_POLLING_FILE_WATCHER=1
+    depends_on:
+      - db
 
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
-      SA_PASSWORD: "Silnehaslo!123"
       ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SA_PASSWORD}"
     ports:
       - "1434:1433"
-    # Dobra praktyka: dodanie woluminu, aby dane bazy przetrwa�y restart kontenera
     volumes:
       - mssql_data:/var/opt/mssql
 
-# Definicja nazwanego woluminu dla bazy danych
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8082:8080"
+
 volumes:
   mssql_data:

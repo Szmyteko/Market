@@ -1,0 +1,47 @@
+@model IEnumerable<Market.Models.Payment>
+@using Market.Models
+
+@functions {
+    string PayBadge(PaymentStatus s) => s switch
+    {
+        PaymentStatus.Paid => "badge bg-success",
+        PaymentStatus.Pending => "badge bg-warning text-dark",
+        PaymentStatus.Overdue => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+}
+
+@{
+    ViewData["Title"] = "Płatności dla moich lokali";
+}
+<h2>@ViewData["Title"]</h2>
+<table class="table">
+<thead><tr><th>Ogłoszenie</th><th>Najemca</th><th>Tytuł</th><th>Kwota</th><th>Termin</th><th>Status</th><th></th></tr></thead>
+<tbody>
+@foreach (var p in Model)
+{
+    <tr>
+        <td>@p.Property?.Address</td>
+        <td>@p.Tenant?.Email</td>
+        <td>@p.Title</td>
+        <td>@p.Amount.ToString("C")</td>
+        <td>@p.DueDate.ToString("yyyy-MM-dd")</td>
+        <td><span class="@PayBadge(p.Status)">@p.Status</span></td>
+        <td>
+            @if (p.Status == PaymentStatus.Pending)
+            {
+                <form asp-action="MarkPaid" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@p.Id" />
+                    <button class="btn btn-sm btn-success">Oznacz jako opłacone</button>
+                </form>
+            }
+            else if (p.Status == PaymentStatus.Paid && p.PaidUtc.HasValue)
+            {
+                <small>Opłacono @p.PaidUtc.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+            }
+        </td>
+    </tr>
+}
+</tbody>
+</table>

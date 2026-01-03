@@ -1,0 +1,32 @@
+@model Market.ViewModels.Conversations.ThreadVm
+@{ ViewData["Title"] = $"Rozmowa z {Model.OtherUserName}"; var me = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value; }
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="card mb-3">
+    <div class="card-body" style="max-height:60vh; overflow:auto;">
+        @if (!Model.Messages.Any())
+        {
+            <div class="text-muted">Brak wiadomości. Rozpocznij rozmowę.</div>
+        }
+        else
+        {
+            foreach (var m in Model.Messages)
+            {
+                var mine = m.SenderId == me;
+                <div class="d-flex mb-2 @(mine ? "justify-content-end" : "justify-content-start")">
+                    <div class="p-2 rounded @(mine ? "bg-primary text-white" : "bg-light")" style="max-width:70%;">
+                        <div class="small mb-1">@((m.Sender?.UserName ?? m.Sender?.Email) ?? "—") • @m.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                        <div>@m.Body</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<form asp-action="Send" method="post" class="d-flex gap-2">
+    <input type="hidden" name="conversationId" value="@Model.ConversationId" />
+    <textarea name="body" class="form-control" rows="2" maxlength="4000" required placeholder="Napisz wiadomość..."></textarea>
+    <button class="btn btn-primary" type="submit">Wyślij</button>
+</form>

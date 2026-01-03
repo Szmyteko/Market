@@ -1,49 +1,53 @@
-using System.Collections;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema; // <- dodane!
 using Microsoft.AspNetCore.Identity;
 
 namespace Market.Models;
+
+public enum PaymentStatus { Pending = 0, Paid = 1, Overdue = 2, Cancelled = 3 }
 
 public class Payment : IValidatableObject
 {
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Proszę wprowadzić ID umowy najmu")]
-    public int RentalAgreementId { get; set; }
+    // Powiązania
+    [Required] public int PropertyId { get; set; }
+    public Property Property { get; set; } = default!;
 
-    [ForeignKey("RentalAgreementId")]
-    public RentalAgreement RentalAgreement { get; set; }
+    [Required] public int RentalAgreementId { get; set; }
+    public RentalAgreement RentalAgreement { get; set; } = default!;
 
+    [Required] public string TenantId { get; set; } = default!;
+    public IdentityUser Tenant { get; set; } = default!;
+
+    [Required] public string UserId { get; set; } = default!; // właściciel
+    public IdentityUser User { get; set; } = default!;
+
+    // Kwoty i terminy
+    [Required, Range(0, double.MaxValue, ErrorMessage = "Kwota musi być nieujemna.")]
+    public decimal Amount { get; set; }
+
+    [MaxLength(3)]
+    public string Currency { get; set; } = "PLN";
+
+    [DataType(DataType.Date)]
+    public DateOnly DueDate { get; set; }        // termin płatności
+
+    public DateTime? PaidUtc { get; set; }       // kiedy opłacono
+
+    // Status i meta
     [Required]
-    public int PropertyId { get; set; }
+    public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 
-    [ForeignKey("PropertyId")]
-    public Property Property { get; set; }
+    [MaxLength(80)]
+    public string? Reference { get; set; }       // np. "APT-2025-00012"
 
-    public string? TenantId { get; set; }
+    [MaxLength(240)]
+    public string? Title { get; set; }           // np. "Najem 2025-10-10 — 2025-10-14"
 
-    [ForeignKey("TenantId")]
-    public Tenant? Tenant { get; set; }
-
-    [Required(ErrorMessage = "Należy wprowadzić kwotę płatności.")]
-    public int Amount { get; set; }
-
-    [Required(ErrorMessage = "Musisz wprowadzić datę płatności.")]
-    public DateOnly Date { get; set; }
-
-    public string Status { get; set; }
-
-    public string? UserId { get; set; }
-
-    [ForeignKey("UserId")]
-    public IdentityUser? User { get; set; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    // Walidacja modelu
+    public IEnumerable<ValidationResult> Validate(ValidationContext _)
     {
         if (Amount < 0)
-        {
-            yield return new ValidationResult("Kwota musi być dodatnia", new[] { nameof(Amount) });
-        }
+            yield return new ValidationResult("Kwota musi być nieujemna.", new[] { nameof(Amount) });
     }
 }

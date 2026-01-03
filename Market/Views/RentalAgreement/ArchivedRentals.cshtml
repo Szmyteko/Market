@@ -1,0 +1,33 @@
+﻿@model IEnumerable<Market.Models.RentalAgreement>
+
+@{
+    ViewData["Title"] = "Moje zakończone najmy";
+}
+
+<h2>Moje zakończone najmy</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Adres</th>
+            <th>Czynsz</th>
+            <th>Początek</th>
+            <th>Koniec</th>
+            <th>Właściciel</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var rental in Model)
+        {
+            <tr>
+                <td>@rental.Property.Address</td>
+                <td>@rental.MonthlyRent zł</td>
+                <td>@rental.StartDate</td>
+                <td>@(rental.EndDate.HasValue? rental.EndDate.Value.ToString() : "brak")</td>
+                <td>@rental.User.Email</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="MyRentals" asp-controller="RentalRequest" class="btn btn-secondary">Powrót do aktywnych najemów</a>

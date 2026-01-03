@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Market.Data;
 using Market.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -10,170 +13,99 @@ namespace Market.Controllers;
 [Authorize]
 public class PaymentController : Controller
 {
-    private readonly ApplicationDbContext _context;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly ApplicationDbContext _ctx;
+    private readonly UserManager<IdentityUser> _um;
 
-    public PaymentController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+    public PaymentController(ApplicationDbContext ctx, UserManager<IdentityUser> um)
     {
-        _context = context;
-        _userManager = userManager;
+        _ctx = ctx;
+        _um = um;
     }
 
+    // Najemca: moje płatności
+    [Authorize]
     public async Task<IActionResult> Index()
     {
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return Challenge(); // Użytkownik nie istnieje, przekieruj do logowania
-        }
-        var userRoles = await _userManager.GetRolesAsync(user);
+        var uid = _um.GetUserId(User)!;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        if (userRoles.Contains("Admin"))
-        {
-            // Admin: wszystkie aktywne wynajmy + historia płatności
-            var activeRentals = await _context.RentalAgreement
-                .Include(ra => ra.Property)
-                .Include(ra => ra.Tenant)
-                .Where(ra => ra.EndDate == null || ra.EndDate >= DateOnly.FromDateTime(DateTime.Now))
-                .ToListAsync();
+        await _ctx.Payment
+            .Where(p => p.TenantId == uid && p.Status == PaymentStatus.Pending && p.DueDate < today)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Status, PaymentStatus.Overdue));
 
-            // Poprawione zapytanie, aby załadować wszystkie potrzebne dane
-            var allPayments = await _context.Payment
-                .Include(p => p.Tenant) // Dla @payment.Tenant.FullName
-                .Include(p => p.User)   // Dla @payment.User?.UserName
-                .Include(p => p.RentalAgreement)
-                    .ThenInclude(ra => ra.Property)
-                        .ThenInclude(p => p.User) // Dla @payment.RentalAgreement.Property.User.UserName
-                .ToListAsync();
+        var items = await _ctx.Payment
+            .Where(p => p.TenantId == uid)
+            .Include(p => p.Property)
+            .Include(p => p.RentalAgreement)
+            .OrderBy(p => p.Status).ThenBy(p => p.DueDate)
+            .AsNoTracking()
+            .ToListAsync();
 
-            ViewBag.ActiveRentals = activeRentals;
-            ViewBag.AllPayments = allPayments; // Możesz to zostawić, jeśli druga tabela tego wymaga
-
-            // --- GŁÓWNA POPRAWKA ---
-            // Przekazujemy listę płatności jako model do widoku
-            return View("AdminIndex", allPayments);
-        }
-
-        if (userRoles.Contains("Najemca"))
-        {
-            // Najemca: szczegóły wynajmu + możliwość dokonania płatności
-            var tenantAgreements = await _context.RentalAgreement
-                .Include(ra => ra.Property)
-                .Where(ra => ra.UserId == user.Id)
-                .ToListAsync();
-
-            var tenantPayments = await _context.Payment
-                .Where(p => p.UserId == user.Id)
-                .ToListAsync();
-
-            ViewBag.TenantAgreements = tenantAgreements;
-            ViewBag.TenantPayments = tenantPayments;
-
-            return View("TenantIndex");
-        }
-
-        if (userRoles.Contains("Wynajmujący"))
-        {
-            // Wynajmujący: lista lokali + historia wpływów
-            var ownerProperties = await _context.Property
-                .Where(p => p.UserId == user.Id)
-                .ToListAsync();
-
-            var ownerIncome = await _context.Payment
-                .Include(p => p.RentalAgreement)
-                .Where(p => p.RentalAgreement.Property.UserId == user.Id)
-                .ToListAsync();
-
-            ViewBag.OwnerProperties = ownerProperties;
-            ViewBag.OwnerIncome = ownerIncome;
-
-            return View("OwnerIndex");
-        }
-
-        return Unauthorized(); // Jeśli użytkownik nie ma odpowiedniej roli
+        return View(items);
     }
 
-    [Authorize(Roles = "Najemca")]
+    // Właściciel: płatności dla moich lokali
+    [Authorize]
+    public async Task<IActionResult> Owner()
+    {
+        var uid = _um.GetUserId(User)!;
+        var isAdmin = User.IsInRole("Admin"); // [NOWE] rola poza LINQ
+
+        IQueryable<Payment> q = _ctx.Payment;
+
+        if (!isAdmin)
+            q = q.Where(p => p.UserId == uid); // [NOWE] filtr własności tylko dla nie-admina
+
+        var items = await q
+            .Include(p => p.Property)
+            .Include(p => p.Tenant)
+            .OrderBy(p => p.Status).ThenBy(p => p.DueDate)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return View(items);
+    }
+
+    // Właściciel/Admin: oznacz jako opłacone
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkPaid(int id)
+    {
+        var uid = _um.GetUserId(User)!;
+        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+
+        IQueryable<Payment> q = _ctx.Payment.Where(p => p.Id == id); // [NOWE]
+        if (!isAdmin)
+            q = q.Where(p => p.UserId == uid); // [NOWE]
+
+        var pay = await q.FirstOrDefaultAsync();
+        if (pay == null) return NotFound();
+
+        pay.Status = PaymentStatus.Paid;
+        pay.PaidUtc = DateTime.UtcNow;
+        await _ctx.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Owner));
+    }
+
+    // Najemca: opłać (symulacja)
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Pay(int id)
     {
-        var user = await _userManager.GetUserAsync(User);
+        var uid = _um.GetUserId(User)!;
 
-        var rentalAgreement = await _context.RentalAgreement
-            .Include(ra => ra.Property)
-            .FirstOrDefaultAsync(ra => ra.Id == id && ra.UserId == user.Id);
+        var pay = await _ctx.Payment
+            .FirstOrDefaultAsync(p => p.Id == id && p.TenantId == uid && p.Status == PaymentStatus.Pending);
+        if (pay == null) return NotFound();
 
-        if (rentalAgreement == null)
-        {
-            return NotFound("Umowa najmu nie została znaleziona lub nie masz do niej dostępu.");
-        }
+        // TODO: integracja bramki płatniczej
+        pay.Status = PaymentStatus.Paid;
+        pay.PaidUtc = DateTime.UtcNow;
+        await _ctx.SaveChangesAsync();
 
-        ViewBag.RentalAgreement = rentalAgreement;
-
-        return View();
-    }
-
-    [HttpPost]
-    [Authorize(Roles = "Najemca")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Pay(int rentalAgreementId, int amount, DateTime paymentDate)
-    {
-        var user = await _userManager.GetUserAsync(User);
-
-        var rentalAgreement = await _context.RentalAgreement
-            .FirstOrDefaultAsync(ra => ra.Id == rentalAgreementId && ra.UserId == user.Id);
-
-        if (rentalAgreement == null)
-        {
-            return NotFound("Umowa najmu nie została znaleziona lub nie masz do niej dostępu.");
-        }
-
-        var payment = new Payment
-        {
-            RentalAgreementId = rentalAgreementId,
-            Amount = amount,
-            Date = DateOnly.FromDateTime(paymentDate),
-            Status = "Opłacona",
-            UserId = user.Id
-        };
-
-        _context.Payment.Add(payment);
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = "Płatność została dokonana.";
-        return RedirectToAction("Index");
-    }
-
-    [Authorize(Roles = "Wynajmujący")]
-    public async Task<IActionResult> Remind(int propertyId)
-    {
-        var user = await _userManager.GetUserAsync(User);
-
-        var property = await _context.Property
-            .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.Id == propertyId && p.UserId == user.Id);
-
-        if (property == null)
-        {
-            return NotFound("Lokal nie został znaleziony lub nie jesteś jego właścicielem.");
-        }
-
-        var rentalAgreement = await _context.RentalAgreement
-            .Include(ra => ra.Tenant)
-            .FirstOrDefaultAsync(ra => ra.PropertyId == propertyId && (ra.EndDate == null || ra.EndDate >= DateOnly.FromDateTime(DateTime.Now)));
-
-        if (rentalAgreement == null)
-        {
-            return NotFound("Brak aktywnej umowy najmu dla tego lokalu.");
-        }
-
-        // Logika wysyłania przypomnienia
-        var tenant = rentalAgreement.Tenant;
-        string message = $"Przypomnienie: Proszę dokonać płatności za lokal przy {property.Address}. Kwota: {rentalAgreement.MonthlyRent} zł.";
-
-        // Zakładamy, że istnieje usługa EmailService lub SmsService
-        // await _emailService.SendEmailAsync(tenant.Email, "Przypomnienie o płatności", message);
-
-        TempData["SuccessMessage"] = "Przypomnienie zostało wysłane.";
-        return RedirectToAction("Index");
+        return RedirectToAction(nameof(Index));
     }
 }

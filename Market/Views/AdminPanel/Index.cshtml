@@ -24,12 +24,15 @@
             <td>@user.User.Email</td>
             <td>@user.User.PhoneNumber</td>
             <td>@string.Join(", ", user.Roles)</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@user.User.Id" class="btn btn-success">Edytuj</a>
-                <a asp-action="Delete" asp-route-id="@user.User.Id" class="btn btn-danger">Usuń</a>
+            <td class="d-flex gap-2">
+                <a asp-controller="Profiles" asp-action="Owner" asp-route-id="@user.User.Id"
+                   class="btn btn-outline-secondary btn-sm">Profil</a>
+                <a asp-action="Edit" asp-route-id="@user.User.Id" class="btn btn-success btn-sm">Edytuj</a>
+                <a asp-action="Delete" asp-route-id="@user.User.Id" class="btn btn-danger btn-sm">Usuń</a>
             </td>
         </tr>
     }
     </tbody>
 </table>
+
 <a asp-action="Create" class="btn btn-primary">Utwórz użytkownika</a>

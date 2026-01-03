@@ -1,5 +1,6 @@
-using   Market.Data;
-using   Market.Models;
+using Market.Data;
+using Market.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +17,20 @@ public class RentalAgreementController : Controller
         _context = context;
         _userManager = userManager;
     }
+
+    // Lista wszystkich umów (np. dla admina)
     public async Task<IActionResult> Index()
     {
-        return View();
+        var agreements = await _context.RentalAgreement
+            .Include(r => r.Property)
+            .Include(r => r.Tenant)
+            .Include(r => r.User) // właściciel
+            .ToListAsync();
+
+        return View(agreements);
     }
-    
+
+    // GET: formularz do wynajęcia lokalu
     public async Task<IActionResult> Rent(int id)
     {
         var property = await _context.Property.FindAsync(id);
@@ -38,58 +48,52 @@ public class RentalAgreementController : Controller
         return View(model);
     }
 
+    // POST: zapisanie nowej umowy najmu
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rent(RentalAgreement rentalAgreement)
     {
         var property = await _context.Property.FindAsync(rentalAgreement.PropertyId);
         if (property == null || !property.IsAvailable)
-        {
             return BadRequest("Lokal jest niedostępny.");
-        }
 
-        var userId = _userManager.GetUserId(User);
+        if (property.ApprovalStatus != ListingApprovalStatus.Approved)
+            return BadRequest("Lokal oczekuje na akceptację administratora.");
 
-        // Sprawdź, czy najemca istnieje
-        var tenant = await _context.Tenant.FirstOrDefaultAsync(t => t.UserId == userId);
-        if (tenant == null)
-        {
-            tenant = new Tenant
-            {
-                Id = Guid.NewGuid().ToString(), // Ręczne generowanie klucza
-                UserId = userId,
-                FullName = User.Identity.Name ?? "Nieznany użytkownik",
-                Email = (await _userManager.GetUserAsync(User))?.Email,
-                PhoneNumber = "" // Możesz wypełnić to numerem telefonu użytkownika
-            };
+        var userId = _userManager.GetUserId(User); // najemca = zalogowany użytkownik
 
-            _context.Tenant.Add(tenant);
-            await _context.SaveChangesAsync();
-        }
-
-        // Tworzenie nowej umowy najmu
         var newRentalAgreement = new RentalAgreement
         {
             PropertyId = rentalAgreement.PropertyId,
-            TenantId = tenant.Id,
-            StartDate = rentalAgreement.StartDate != default ? rentalAgreement.StartDate : DateOnly.FromDateTime(DateTime.UtcNow),
+            TenantId = userId,
+            StartDate = rentalAgreement.StartDate == default
+                ? DateOnly.FromDateTime(DateTime.UtcNow)
+                : rentalAgreement.StartDate,
             EndDate = rentalAgreement.EndDate,
-            MonthlyRent = property.RentPrice.Value
+            MonthlyRent = property.RentPrice ?? 0,
+            UserId = property.UserId // właściciel lokalu
         };
 
-        property.IsAvailable = false; // Lokal jest zajęty
+        property.IsAvailable = false; // lokal zajęty
+
         _context.RentalAgreement.Add(newRentalAgreement);
         await _context.SaveChangesAsync();
 
-        return RedirectToAction("Index", "Tenant");
+        // przekierowanie do listy najemów zalogowanego użytkownika
+        return RedirectToAction("MyRentals", "RentalRequest");
     }
+    [Authorize]
+    public async Task<IActionResult> ArchivedRentals()
+    {
+        var userId = _userManager.GetUserId(User);
 
+        var archivedRentals = await _context.RentalAgreement
+            .Include(r => r.Property)
+            .Include(r => r.User) // właściciel
+            .Where(r => r.TenantId == userId &&
+                       (r.EndDate != null || r.Property.IsDeleted))
+            .ToListAsync();
 
-
-
-
-
-    
-
-
+        return View(archivedRentals);
+    }
 }

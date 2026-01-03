@@ -1,0 +1,45 @@
+﻿@model IEnumerable<Market.Models.RentalRequest>
+@{
+    ViewData["Title"] = "Zgłoszenia do moich lokali";
+}
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["ApproveError"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Lokal</th>
+            <th>Najemca</th>
+            <th>Zakres</th>
+            <th>Utworzono</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Property?.Address</td>
+                <td>@r.Requester?.Email</td>
+                <td>@r.StartDate.ToString("yyyy-MM-dd") — @r.EndDate.ToString("yyyy-MM-dd")</td>
+                <td>@r.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>
+                    <form asp-action="Approve" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@r.Id" />
+                        <button type="submit" class="btn btn-success btn-sm">Akceptuj</button>
+                    </form>
+                    <form asp-action="Reject" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@r.Id" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Odrzuć</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

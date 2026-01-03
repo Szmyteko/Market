@@ -1,23 +1,44 @@
 using Market.Data;
+using Market.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+// services
+builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+         ?? throw new InvalidOperationException("Missing connection string");
+
+builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(cs));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddRoles<IdentityRole>() // Dodanie obs�ugi r�l
+builder.Services
+    .AddDefaultIdentity<IdentityUser>(o =>
+    {
+        o.SignIn.RequireConfirmedAccount = false;
+    })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services.AddControllersWithViews();
+
+// Forwarded headers (ważne za reverse proxy: Caddy/Nginx/Traefik)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    // Jeśli masz stały reverse proxy w tej samej sieci dockerowej, można ograniczyć KnownNetworks/Proxies.
+    // Przy prostym wdrożeniu zostawiamy bez ograniczeń, żeby nie blokować nagłówków.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -28,95 +49,80 @@ else
     app.UseHsts();
 }
 
+app.UseForwardedHeaders();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
+// routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
-
-// --- ZMIANY ZACZYNAJ� SI� TUTAJ ---
-
-// Krok 1 & 2: Automatyczne migracje i inicjalizacja danych z mechanizmem ponawiania
+// init db + seed
 await InitializeDatabaseAsync(app);
-
-// --- ZMIANY KO�CZ� SI� TUTAJ ---
-
 
 app.Run();
 
 
-// --- Funkcje pomocnicze ---
-
-async Task InitializeDatabaseAsync(IHost app)
+// helpers
+static async Task InitializeDatabaseAsync(IHost appHost)
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    using var scope = appHost.Services.CreateScope();
+    var sp = scope.ServiceProvider;
 
-        var maxRetries = 10;
-        var delay = TimeSpan.FromSeconds(5);
+    var db = sp.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
 
-        for (int i = 0; i < maxRetries; i++)
-        {
-            try
-            {
-                logger.LogInformation("Attempting to connect to the database and apply migrations... (Attempt {Attempt})", i + 1);
-                await dbContext.Database.MigrateAsync();
-                logger.LogInformation("Migrations applied successfully.");
-
-                logger.LogInformation("Attempting to seed initial data...");
-                await SeedInitialData(services);
-                logger.LogInformation("Seeding completed successfully.");
-
-                return; // Sukces, wychodzimy z funkcji
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "An error occurred during database initialization. Retrying in {Delay} seconds...", delay.TotalSeconds);
-                await Task.Delay(delay);
-            }
-        }
-
-        logger.LogError("Could not initialize the database after {MaxRetries} attempts.", maxRetries);
-    }
+    await SeedInitialData(sp);
 }
 
-async Task SeedInitialData(IServiceProvider services)
+static async Task SeedInitialData(IServiceProvider sp)
 {
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+    var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = sp.GetRequiredService<UserManager<IdentityUser>>();
+    var config = sp.GetRequiredService<IConfiguration>();
 
-    // Tworzenie r�l
-    string[] roles = { "Admin", "Najemca", "Wynajmuj�cy" };
-    foreach (var role in roles)
+    // Role (bez polskich znaków; spójnie w całym projekcie)
+    string[] roles = { "User", "Moderator", "Admin" };
+    foreach (var r in roles)
     {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
+        if (!await roleManager.RoleExistsAsync(r))
+            await roleManager.CreateAsync(new IdentityRole(r));
     }
 
-    // Tworzenie domy�lnego konta administratora
-    var adminEmail = "admin@admin.com";
-    var adminPassword = "Pa$$w0rd";
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-    if (adminUser == null)
+    // Przypnij rolę bazową użytkownikom bez ról
+    foreach (var u in userManager.Users.ToList())
     {
-        var newAdmin = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
-        var result = await userManager.CreateAsync(newAdmin, adminPassword);
-        if (result.Succeeded)
+        if (!(await userManager.GetRolesAsync(u)).Any())
+            await userManager.AddToRoleAsync(u, "User");
+    }
+
+    // Admin tylko, jeśli podano w konfiguracji (ENV/sekrety)
+    // W docker-compose: Seed__AdminEmail / Seed__AdminPassword
+    var adminEmail = config["Seed:AdminEmail"];
+    var adminPassword = config["Seed:AdminPassword"];
+
+    if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+        return;
+
+    var admin = await userManager.FindByEmailAsync(adminEmail);
+    if (admin is null)
+    {
+        var newAdmin = new IdentityUser
         {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var res = await userManager.CreateAsync(newAdmin, adminPassword);
+        if (res.Succeeded)
             await userManager.AddToRoleAsync(newAdmin, "Admin");
-        }
     }
 }

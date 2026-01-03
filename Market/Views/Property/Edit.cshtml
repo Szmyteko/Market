@@ -1,80 +1,91 @@
 @model Market.Models.PropertyUpdateDto
+@{
+    ViewData["Title"] = "Edycja lokalu";
+    var active = ViewBag.ActiveAgreement as Market.Models.RentalAgreement;
+}
 
-<h2>Edycja lokalu</h2>
+<h2>@ViewData["Title"]</h2>
 
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
-    
-    <div class="form-group">
-        <label asp-for="Description">Opis mieszkania</label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
+<div class="card mb-3">
+    <div class="card-body">
+        <h5>Obecny najem</h5>
+        @if (active is null)
+        {
+            <p>Brak aktywnego najmu.</p>
+        }
+        else
+        {
+            <p>
+                Najemca: @active.Tenant?.Email<br />
+                Okres: @active.StartDate.ToString("yyyy-MM-dd")
+                @if (active.EndDate is not null)
+                {
+                    @: – @active.EndDate.Value.ToString("yyyy-MM-dd")
+                }
+                else
+                {
+                    @: – bez daty zakończenia
+                }
+            </p>
+            <form asp-action="CloseActiveRental" method="post" class="mt-2">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="propertyId" value="@Model.Id" />
+                <button type="submit" class="btn btn-warning btn-sm">Zwolnij lokal</button>
+            </form>
+        }
     </div>
-    <div class="form-group">
-        <label asp-for="RentPrice">Kwota najmu</label>
-        <input asp-for="RentPrice" class="form-control" />
-        <span asp-validation-for="RentPrice" class="text-danger"></span>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="RentPrice" class="form-label"></label>
+                <input asp-for="RentPrice" class="form-control" />
+                <span asp-validation-for="RentPrice" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Zapisz</button>
+            <a asp-action="MyListings" class="btn btn-secondary">Anuluj</a>
+        </form>
     </div>
-    <button type="submit" asp-route-id="@Model.Id" class="btn btn-primary">Zapisz zmiany</button>
+</div>
+<h5 class="mt-4">Zdjęcia</h5>
+<form asp-action="UploadImages" method="post" enctype="multipart/form-data" class="mb-3">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+    <input type="file" name="files" multiple accept="image/*" class="form-control mb-2" />
+    <button type="submit" class="btn btn-sm btn-primary">Dodaj zdjęcia</button>
 </form>
 
-<hr />
-
-<h2>Obecny najemca</h2>
-
-@if (Model.RentalAgreement != null)
+@if ((ViewBag.Images as IEnumerable<Market.Models.PropertyImage>)?.Any() == true)
 {
-    <p><strong>Imię i nazwisko:</strong> @Model.RentalAgreement.Tenant.FullName</p>
-    <p><strong>Data wynajmu od:</strong> @Model.RentalAgreement.StartDate.ToString("yyyy-MM-dd")</p>
-    <p><strong>Data wynajmu do:</strong> @(Model.RentalAgreement.EndDate?.ToString("yyyy-MM-dd") ?? "Brak")</p>
-    <form asp-action="RemoveTenant" method="post" style="margin-top: 10px;">
-        <input type="hidden" name="propertyId" value="@Model.Id" />
-        <button type="submit" class="btn btn-danger">Usuń najemcę</button>
-    </form>
-}
-else
-{
-    <p>Brak przypisanego najemcy.</p>
-}
-<hr />
-
-<h2>Zarządzaj zgłoszeniami serwisowymi</h2>
-
-@if (Model.MaintenanceRequest != null)
-{
-    <table class="table">
-        <thead>
-        <tr>
-            <th>Data przyjęcia</th>
-            <th>Opis zgłoszenia</th>
-            <th>Status</th>
-            <th>Akcje</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var request in Model.MaintenanceRequest)
+    <div class="row g-2">
+        @foreach (var img in (IEnumerable<Market.Models.PropertyImage>)ViewBag.Images)
         {
-            <tr>
-                <td>@request.StartDate.ToString("yyyy-MM-dd")</td>
-                <td>@request.Description</td>
-                <td>@request.Status</td>
-                <td>
-                    <form asp-action="UpdateRequestStatus" method="post" style="display:inline;">
-                        <input type="hidden" name="requestId" value="@request.Id" />
-                        <select name="newStatus" class="form-control" style="width: auto; display: inline;">
-                            <option value="Nowe">Nowe</option>
-                            <option value="W trakcie">W trakcie</option>
-                            <option value="Zakończone">Zakończone</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary">Zmień status</button>
-                    </form>
-                </td>
-            </tr>
+            <div class="col-6 col-md-3">
+                <div class="card">
+                    <img src="@img.Url" class="card-img-top" alt="foto" />
+                    <div class="card-body p-2 text-center">
+                        <form asp-action="DeleteImage" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="imageId" value="@img.Id" />
+                            <button class="btn btn-sm btn-outline-danger">Usuń</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         }
-        </tbody>
-    </table>
+    </div>
 }
-else
-{
-    <p>Brak zgłoszeń serwisowych dla tego lokalu.</p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }

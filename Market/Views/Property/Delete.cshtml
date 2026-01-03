@@ -1,8 +1,19 @@
-@model Market.Models.Property
+﻿@model Market.Models.Property
 
 @{
-    ViewBag.Title = "title";
-    Layout = "_Layout";
+    ViewData["Title"] = "Usuń ogłoszenie";
 }
 
-<h2>title</h2>
+<h2>Czy na pewno chcesz usunąć to ogłoszenie?</h2>
+
+<div>
+    <h4>@Model.Address</h4>
+    <p>Cena: @Model.RentPrice</p>
+    <p>Metraż: @Model.Size m²</p>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Usuń</button>
+    <a asp-action="MyListings" class="btn btn-secondary">Anuluj</a>
+</form>

@@ -1,4 +1,6 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Globalization
 @model Microsoft.AspNetCore.Identity.IdentityUser
 
 @{
@@ -27,9 +29,9 @@
         <label for="Role">Rola użytkownika</label>
         <select name="selectedRole" class="form-control">
             <option value="">Wybierz rolę</option>
-            @foreach (var role in ViewBag.Roles as IEnumerable<SelectListItem>)
+            @foreach (var role in (IEnumerable<SelectListItem>)ViewBag.Roles ?? Enumerable.Empty<SelectListItem>())
             {
-                <option value="@role.Value">@role.Text</option>
+                <option value="@role.Value" selected="@(role.Selected ? "selected" : null)">@role.Text</option>
             }
         </select>
     </div>
@@ -57,7 +59,7 @@
             {
                 <tr>
                     <td>@property.Address</td>
-                    <td>@property.RentPrice zł</td>
+                    <td>@((property.RentPrice as decimal?)?.ToString("C", new CultureInfo("pl-PL")))</td>
                     <td>@property.Size m²</td>
                     <td>@(property.IsAvailable ? "Dostępny" : "Zajęty")</td>
                 </tr>
@@ -67,6 +69,7 @@
 }
 else
 {
+
     <p>Użytkownik nie ma przypisanych lokali.</p>
 }
 
@@ -90,10 +93,10 @@ else
             {
                 <tr>
                     <td>@agreement.Property.Address</td>
-                    <td>@agreement.Tenant.FullName</td>
+                    <td>@(agreement.Tenant?.UserName ?? agreement.Tenant?.Email ?? agreement.TenantId)</td>
                     <td>@agreement.StartDate.ToString("yyyy-MM-dd")</td>
-                    <td>@agreement.EndDate?.ToString("yyyy-MM-dd") ?? "Brak"</td>
-                    <td>@agreement.MonthlyRent zł</td>
+                    <td>@(agreement.EndDate != null ? agreement.EndDate.ToString("yyyy-MM-dd") : "Brak")</td>
+                    <td>@((agreement.MonthlyRent as decimal?)?.ToString("C", new CultureInfo("pl-PL")))</td>
                 </tr>
             }
         </tbody>
@@ -101,28 +104,29 @@ else
 }
 else
 {
+
     <p>Użytkownik nie ma przypisanych umów najmu.</p>
 }
 
 <hr />
 
 <h3>Płatności</h3>
-@if (ViewBag.Payments != null )
+@if (ViewBag.Payments != null)
 {
     <table class="table">
         <thead>
             <tr>
-                <th>Data</th>
+                <th>Termin</th>
                 <th>Kwota</th>
-                <th>Powiązana umowa</th>
+                <th>Umowa</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var payment in ViewBag.Payments)
             {
                 <tr>
-                    <td>@payment.Date.ToString("yyyy-MM-dd")</td>
-                    <td>@payment.Amount zł</td>
+                    <td>@payment.DueDate.ToString("yyyy-MM-dd")</td>
+                    <td>@((payment.Amount as decimal?)?.ToString("C", new CultureInfo("pl-PL")))</td>
                     <td>@payment.RentalAgreementId</td>
                 </tr>
             }
@@ -131,5 +135,6 @@ else
 }
 else
 {
+
     <p>Brak zarejestrowanych płatności dla użytkownika.</p>
 }

@@ -16,7 +16,8 @@
                     <p class="mb-1">Wypełnij poniższe pola, aby dodać nową nieruchomość.</p>
                 </div>
                 <div class="card-body p-4">
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
 
                         @* Po zakończeniu debugowania, wracamy do "ModelOnly". 
                            Błędy poszczególnych pól będą wyświetlane pod nimi. *@
@@ -36,6 +37,27 @@
                                     <span asp-validation-for="RentPrice" class="text-danger small"></span>
                                 </div>
                             </div>
+                            <fieldset class="border rounded p-3 mb-3">
+                                <legend class="float-none w-auto px-2 h6 mb-3">Udogodnienia</legend>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" asp-for="HasWifi" />
+                                    <label class="form-check-label" asp-for="HasWifi">Wi-Fi</label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" asp-for="HasPrivateBathroom" />
+                                    <label class="form-check-label" asp-for="HasPrivateBathroom">Prywatna łazienka</label>
+                                </div>
+
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" asp-for="HasBalcony" />
+                                    <label class="form-check-label" asp-for="HasBalcony">Balkon</label>
+                                </div>
+
+                                <label class="form-label" asp-for="AmenitiesNote">Inne udogodnienia / uwagi</label>
+                                <textarea class="form-control" asp-for="AmenitiesNote" rows="2"></textarea>
+                            </fieldset>
                             <div class="col-md-6">
                                 <div class="form-floating mb-3">
                                     <input asp-for="Size" class="form-control" placeholder="Metraż (m²)" type="number" />
@@ -43,14 +65,19 @@
                                     <span asp-validation-for="Size" class="text-danger small"></span>
                                 </div>
                             </div>
-                        </div>
+                 
 
                         <div class="form-floating mb-3">
                             <textarea asp-for="Description" class="form-control" placeholder="Opis" style="height: 120px;"></textarea>
                             <label asp-for="Description">Opis</label>
                             <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
+                        </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">Zdjęcia (JPG/PNG/WebP, do 5 MB, możesz dodać kilka)</label>
+                            <input type="file" name="files" class="form-control" multiple accept=".jpg,.jpeg,.png,.webp" />
+                        </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a asp-action="MyListings" class="btn btn-outline-secondary me-md-2">
                                 <i class="bi bi-x-circle"></i> Anuluj

@@ -1,0 +1,45 @@
+﻿@model IEnumerable<Market.Models.RentalRequest>
+
+@functions {
+    string RRBadge(RentalRequestStatus s) => s switch
+    {
+        RentalRequestStatus.Approved => "badge bg-success",
+        RentalRequestStatus.Pending => "badge bg-warning text-dark",
+        RentalRequestStatus.Rejected => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+    string RRLabel(RentalRequestStatus s) => s switch
+    {
+        RentalRequestStatus.Approved => "Approved",
+        RentalRequestStatus.Pending => "Pending",
+        RentalRequestStatus.Rejected => "Rejected",
+        _ => s.ToString()
+    };
+}
+
+@{
+    ViewData["Title"] = "Moje prośby o najem";
+}
+<h2>@ViewData["Title"]</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Lokal</th>
+            <th>Zakres</th>
+            <th>Status</th>
+            <th>Wysłano</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Property?.Address</td>
+                <td>@r.StartDate.ToString("yyyy-MM-dd") — @r.EndDate.ToString("yyyy-MM-dd")</td>
+                <td><span class="@RRBadge(r.Status)">@RRLabel(r.Status)</span></td>
+                <td>@r.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+            </tr>
+        }
+    </tbody>
+</table>

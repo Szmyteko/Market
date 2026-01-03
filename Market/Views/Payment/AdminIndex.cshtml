@@ -12,9 +12,9 @@
     @foreach (var payment in Model)
     {
         <tr>
-            <td>@payment.Date.ToString("yyyy-MM-dd")</td> <!-- Bez HasValue -->
+                <td>@payment.@payment.DueDate.ToString("yyyy-MM-dd")</td> <!-- Bez HasValue -->
             <td>@payment.Amount zł</td>
-            <td>@payment.Tenant.FullName</td>
+            <td>@payment.Tenant.Email</td>
         </tr>
     }
     </tbody>
