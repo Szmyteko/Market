@@ -1,4 +1,16 @@
 services:
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - market
   market:
     build:
       context: .
@@ -7,6 +19,7 @@ services:
       - "8081:8080"
     volumes:
       - ./Market:/src/Market
+      - aptmarket_uploads:/app/wwwroot/uploads
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=MarketDb;User ID=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
@@ -20,7 +33,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD}"
     ports:
       - "1434:1433"
     volumes:
@@ -34,3 +47,7 @@ services:
 
 volumes:
   mssql_data:
+  aptmarket_uploads:
+  caddy_data:
+  caddy_config:
+
