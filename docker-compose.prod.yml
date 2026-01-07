@@ -11,8 +11,7 @@ services:
       - Seed__AdminEmail=${SEED_ADMIN_EMAIL}
       - Seed__AdminPassword=${SEED_ADMIN_PASSWORD}
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     volumes:
       - market_storage:/app/PrivateStorage
     networks:
@@ -31,14 +30,6 @@ services:
       - internal
     restart: unless-stopped
     mem_limit: 4g
-    healthcheck:
-      # Uwaga: jeśli bash nie istnieje w obrazie, healthcheck będzie FAIL.
-      # Jeśli tak się stanie, usuń "-c" i przejdź na wariant poniżej (A).
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1433'"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 20s
 
   caddy:
     image: caddy:2
