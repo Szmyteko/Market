@@ -81,14 +81,12 @@
     </nav>
 </header>
 
-<main role="main" class="container py-4">
-    @if (ViewData["Title"] is string title && !string.IsNullOrWhiteSpace(title))
-    {
-        <div class="page-header">
-            <h1 class="page-title">@title</h1>
-            @RenderSection("PageActions", required: false)
-        </div>
-    }
+@{
+    var isHome = (ViewContext.RouteData.Values["controller"]?.ToString() == "Home"
+                  && ViewContext.RouteData.Values["action"]?.ToString() == "Index");
+}
+
+
 
     @RenderBody()
 </main>

@@ -1,4 +1,4 @@
-/* site.css (rozbudowana, spójna baza pod Bootstrap 5) */
+/* site.css (rozbudowana, spï¿½jna baza pod Bootstrap 5) */
 
 /* === Bazowe === */
 html {
@@ -28,7 +28,7 @@ body {
     box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem #258cfb;
 }
 
-/* === Typografia i nag³ówki stron === */
+/* === Typografia i nagï¿½ï¿½wki stron === */
 .page-header {
     display: flex;
     align-items: center;
@@ -80,7 +80,7 @@ main.container {
     letter-spacing: .02em;
 }
 
-/* === Karty, sekcje, “pude³ka” === */
+/* === Karty, sekcje, ï¿½pudeï¿½kaï¿½ === */
 .card {
     border: 1px solid rgba(0,0,0,.08);
     border-radius: .9rem;
@@ -97,7 +97,7 @@ main.container {
     padding: 1rem;
 }
 
-/* === Przyciski – subtelne poprawki spójnoœci === */
+/* === Przyciski ï¿½ subtelne poprawki spï¿½jnoï¿½ci === */
 .btn {
     border-radius: .7rem;
 }
@@ -116,7 +116,7 @@ main.container {
     font-weight: 600;
 }
 
-/* === Tabele (listy og³oszeñ / admin) === */
+/* === Tabele (listy ogï¿½oszeï¿½ / admin) === */
 .table {
     background: #fff;
     border-radius: .9rem;
@@ -145,7 +145,7 @@ main.container {
 /* === HERO (np. Home/Index) === */
 .hero {
     position: relative;
-    min-height: 70vh;
+    height: 100%;
     display: grid;
     place-items: center;
     text-align: center;
@@ -166,7 +166,7 @@ main.container {
     margin: 0 auto 1.5rem auto;
 }
 
-/* === Karty og³oszeñ (grid zamiast tabeli) === */
+/* === Karty ogï¿½oszeï¿½ (grid zamiast tabeli) === */
 .listing-grid {
     display: grid;
     grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -225,7 +225,7 @@ main.container {
     gap: .5rem;
 }
 
-/* === Chat / wiadomoœci (Conversations/Thread) === */
+/* === Chat / wiadomoï¿½ci (Conversations/Thread) === */
 .chat-window {
     max-height: 60vh;
     overflow: auto;
