@@ -86,7 +86,8 @@
                   && ViewContext.RouteData.Values["action"]?.ToString() == "Index");
 }
 
-
+<main role="main" class="flex-grow-1 @(isHome ? "" : "container py-4")">
+    @await RenderSectionAsync("PageActions", required: false)
 
     @RenderBody()
 </main>
