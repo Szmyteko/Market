@@ -10,8 +10,7 @@ public class PropertyImage
     public Property Property { get; set; } = default!;
 
     [Required, MaxLength(300)]
-    public string Url { get; set; } = default!;        // /uploads/properties/{id}/{file}
-
+    public string Url { get; set; } = default!;      
     [MaxLength(300)]
     public string? ThumbUrl { get; set; }
 

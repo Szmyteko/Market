@@ -18,12 +18,12 @@ public class MaintenanceRequest
     // Data utworzenia zg³oszenia
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
 
-    // U¿ytkownik, który zg³asza problem (najemca)
+    // U¿ytkownik, który zg³asza problem 
     [Required]
     public string UserId { get; set; } = default!;
     public IdentityUser User { get; set; } = default!;
 
-    // Status zg³oszenia np. Oczekuj¹ce / W trakcie / Zakoñczone
+    // Status zg³oszenia 
     [Required]
     [StringLength(50)]
     public string Status { get; set; } = "Oczekuj¹ce";

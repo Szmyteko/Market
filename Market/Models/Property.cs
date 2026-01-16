@@ -13,7 +13,7 @@ public class Property : IValidatableObject
     public string Address { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Należy podać cenę najmu.")]
-    public decimal? RentPrice { get; set; }   // było int? -> decimal? dla walut
+    public decimal? RentPrice { get; set; }   
 
     [Required(ErrorMessage = "Należy podać metraż lokalu.")]
     public int? Size { get; set; }
@@ -28,7 +28,7 @@ public class Property : IValidatableObject
     public IdentityUser? User { get; set; }
 
     //Historia zmian 
-    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow; // opcjonalne, ale polecam
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow; 
     public DateTime? UpdatedUtc { get; set; }
 
     // Moderacja ogłoszeń

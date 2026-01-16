@@ -25,13 +25,12 @@ builder.Services
 
 builder.Services.AddControllersWithViews();
 
-// Forwarded headers (ważne za reverse proxy: Caddy/Nginx/Traefik)
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-    // Jeśli masz stały reverse proxy w tej samej sieci dockerowej, można ograniczyć KnownNetworks/Proxies.
-    // Przy prostym wdrożeniu zostawiamy bez ograniczeń, żeby nie blokować nagłówków.
+
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -88,7 +87,7 @@ static async Task SeedInitialData(IServiceProvider sp)
     var userManager = sp.GetRequiredService<UserManager<IdentityUser>>();
     var config = sp.GetRequiredService<IConfiguration>();
 
-    // Role (bez polskich znaków; spójnie w całym projekcie)
+  
     string[] roles = { "User", "Moderator", "Admin" };
     foreach (var r in roles)
     {
@@ -96,15 +95,14 @@ static async Task SeedInitialData(IServiceProvider sp)
             await roleManager.CreateAsync(new IdentityRole(r));
     }
 
-    // Przypnij rolę bazową użytkownikom bez ról
+
     foreach (var u in userManager.Users.ToList())
     {
         if (!(await userManager.GetRolesAsync(u)).Any())
             await userManager.AddToRoleAsync(u, "User");
     }
 
-    // Admin tylko, jeśli podano w konfiguracji (ENV/sekrety)
-    // W docker-compose: Seed__AdminEmail / Seed__AdminPassword
+
     var adminEmail = config["Seed:AdminEmail"];
     var adminPassword = config["Seed:AdminPassword"];
 

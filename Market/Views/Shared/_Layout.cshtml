@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/APT_Market.styles.css" asp-append-version="true" />
 </head>
-<body>
+
+<body class="d-flex flex-column min-vh-100">
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
         <div class="container-fluid">
@@ -39,7 +40,6 @@
                                 <li><a class="dropdown-item" asp-controller="Property" asp-action="MyListings">Moje lokale</a></li>
                                 <li><a class="dropdown-item" asp-controller="Property" asp-action="MyListings" asp-route-filter="archived">Archiwalne lokale</a></li>
                                 <li><a class="dropdown-item" asp-controller="RentalRequest" asp-action="OwnerInbox">Zgłoszenia do moich lokali</a></li>
-                                <li><a class="dropdown-item" asp-controller="Maintenance" asp-action="Index">Zgłoszenia serwisowe</a></li>
                                 <li><a class="dropdown-item" asp-controller="Payment" asp-action="Owner">Płatności lokali</a></li>
                             </ul>
                         </li>
@@ -92,9 +92,9 @@
     @RenderBody()
 </main>
 
-<footer class="footer text-muted">
+<footer class="footer mt-auto text-muted">
     <div class="container py-3">
-        &copy; 2024 - APT_Market (Jakub Stroiński, Szymon Szymkowiak) -
+        &copy; @DateTime.Now.Year - APT_Market (Jakub Stroiński, Szymon Szymkowiak) -
         <a asp-controller="Home" asp-action="Privacy">Polityka prywatności</a>
     </div>
 </footer>

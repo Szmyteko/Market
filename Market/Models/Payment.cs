@@ -19,7 +19,7 @@ public class Payment : IValidatableObject
     [Required] public string TenantId { get; set; } = default!;
     public IdentityUser Tenant { get; set; } = default!;
 
-    [Required] public string UserId { get; set; } = default!; // właściciel
+    [Required] public string UserId { get; set; } = default!; 
     public IdentityUser User { get; set; } = default!;
 
     // Kwoty i terminy
@@ -39,11 +39,9 @@ public class Payment : IValidatableObject
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 
     [MaxLength(80)]
-    public string? Reference { get; set; }       // np. "APT-2025-00012"
-
+    public string? Reference { get; set; }      
     [MaxLength(240)]
-    public string? Title { get; set; }           // np. "Najem 2025-10-10 — 2025-10-14"
-
+    public string? Title { get; set; }           
     // Walidacja modelu
     public IEnumerable<ValidationResult> Validate(ValidationContext _)
     {

@@ -2,14 +2,14 @@
 @using Market.Models
 
 @functions {
-    // Jeśli masz enum PaymentStatus
+   
     string PayBadge(PaymentStatus s) => s switch
     {
         PaymentStatus.Paid => "badge bg-success",
         PaymentStatus.Pending => "badge bg-warning text-dark",
         _ => "badge bg-secondary"
     };
-    // Jeśli Status jest stringiem, użyj tej wersji zamiast powyższej:
+   
     string PayBadgeStr(string s) => s == "Paid" ? "badge bg-success"
         : s == "Pending" ? "badge bg-warning text-dark"
         : "badge bg-secondary";

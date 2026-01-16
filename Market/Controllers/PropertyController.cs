@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.IO;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace Market.Controllers;
@@ -40,7 +42,7 @@ public class PropertyController : Controller
             .Where(x => ownerIds.Contains(x.UserId))
             .ToDictionaryAsync(x => x.UserId, x => x.Status);
 
-        ViewBag.OwnerVerification = verMap; // IDictionary<string, VerificationStatus>
+        ViewBag.OwnerVerification = verMap; 
 
 
         var activeToday = await _context.RentalAgreement
@@ -60,8 +62,8 @@ public class PropertyController : Controller
             nextFreeMap[a.PropertyId] = a.MaxEnd.HasValue ? a.MaxEnd.Value.AddDays(1) : (DateOnly?)null;
         }
 
-        ViewBag.AvailableToday = availableMap; // IDictionary<int,bool>
-        ViewBag.NextFreeFrom = nextFreeMap;    // IDictionary<int,DateOnly?>
+        ViewBag.AvailableToday = availableMap; 
+        ViewBag.NextFreeFrom = nextFreeMap;    
         return View(properties);
     }
 
@@ -159,9 +161,9 @@ public class PropertyController : Controller
         model.ApprovalStatus = ListingApprovalStatus.Pending;
 
         _context.Property.Add(model);
-        await _context.SaveChangesAsync(); // potrzebne model.Id
+        await _context.SaveChangesAsync(); 
 
-        // zapisz zdjęcia (te same reguły co w UploadImages)
+       
         var okTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         { "image/jpeg", "image/png", "image/webp" };
         var okExt = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -196,7 +198,7 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // EDYCJA (GET)  // [NOWE] wariant 1
+    // EDYCJA (GET) 
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> Edit(int id)
@@ -232,7 +234,7 @@ public class PropertyController : Controller
         return View(dto);
     }
 
-    // EDYCJA (POST)  // [NOWE] sprawdzenie własności
+    // EDYCJA (POST)  //
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -241,11 +243,11 @@ public class PropertyController : Controller
         if (!ModelState.IsValid) return View(dto);
 
         var userId = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
         var property = await _context.Property.FirstOrDefaultAsync(p => p.Id == dto.Id);
         if (property == null) return NotFound();
-        if (!isAdmin && property.UserId != userId) return Forbid(); // [NOWE]
+        if (!isAdmin && property.UserId != userId) return Forbid(); 
 
         var descriptionChanged = (property.Description ?? string.Empty) != (dto.Description ?? string.Empty);
         var priceChanged = property.RentPrice != dto.RentPrice;
@@ -270,20 +272,20 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // ZAKOŃCZ AKTYWNY NAJEM  // [NOWE] sprawdzenie własności
+    // ZAKOŃCZ AKTYWNY NAJEM 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CloseActiveRental(int propertyId)
     {
         var userId = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
         var property = await _context.Property
             .Include(p => p.RentalAgreements)
             .FirstOrDefaultAsync(p => p.Id == propertyId);
 
         if (property == null) return NotFound("Nie znaleziono lokalu.");
-        if (!isAdmin && property.UserId != userId) return Forbid(); // [NOWE]
+        if (!isAdmin && property.UserId != userId) return Forbid(); 
 
         var active = property.RentalAgreements.FirstOrDefault(ra => ra.EndDate == null);
         if (active == null) return NotFound("Brak aktywnej umowy.");
@@ -295,39 +297,45 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(Edit), new { id = propertyId });
     }
 
-    // USUŃ OGŁOSZENIE (soft delete)  // [NOWE] wariant 1
+    // USUŃ OGŁOSZENIE (soft delete)
     [HttpPost, ActionName("Delete")]
     [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var userId = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
 
-        IQueryable<Property> q = _context.Property.Where(p => p.Id == id); // [NOWE]
-        if (!isAdmin) q = q.Where(p => p.UserId == userId);               // [NOWE]
+        var property = await _context.Property.FirstOrDefaultAsync(p => p.Id == id);
+        if (property == null)
+            return NotFound();
 
-        var property = await q.FirstOrDefaultAsync();
-        if (property == null) return NotFound();
+        var isOwner = property.UserId == userId;
+
+        // właściciel albo admin
+        if (!isAdmin && !isOwner)
+            return Forbid();
 
         property.IsDeleted = true;
         property.DeletedUtc = DateTime.UtcNow;
         property.IsAvailable = false;
+
         await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(MyListings));
+
+        return RedirectToAction(isOwner ? nameof(MyListings) : nameof(Index));
     }
 
-    // PRZYWRÓĆ OGŁOSZENIE  // [NOWE] wariant 1
+    // PRZYWRÓĆ OGŁOSZENIE  
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Restore(int id)
     {
         var uid = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
-        IQueryable<Property> q = _context.Property.Where(p => p.Id == id && p.IsDeleted); // [NOWE]
-        if (!isAdmin) q = q.Where(p => p.UserId == uid);                                   // [NOWE]
+        IQueryable<Property> q = _context.Property.Where(p => p.Id == id && p.IsDeleted); 
+        if (!isAdmin) q = q.Where(p => p.UserId == uid);                                   
 
         var property = await q.FirstOrDefaultAsync();
         if (property == null) return NotFound();
@@ -372,20 +380,20 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(Details), new { id = propertyId });
     }
 
-    // ZMIANA STATUSU ZGŁOSZENIA SERWISOWEGO  // [NOWE] kontrola właściciela/admina
+    // ZMIANA STATUSU ZGŁOSZENIA SERWISOWEGO  
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateRequestStatus(int requestId, string status)
     {
         var uid = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin");
 
         var request = await _context.MaintenanceRequest
             .Include(r => r.Property)
             .FirstOrDefaultAsync(r => r.Id == requestId);
 
         if (request == null) return NotFound();
-        if (!isAdmin && request.Property.UserId != uid) return Forbid(); // [NOWE]
+        if (!isAdmin && request.Property.UserId != uid) return Forbid();
 
         request.Status = status;
         await _context.SaveChangesAsync();
@@ -393,7 +401,7 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // ARCHIWUM (alias)  // [NOWE] usunięcie duplikatu widoku
+    // ARCHIWUM (alias)  
     [Authorize]
     [HttpGet]
     public IActionResult ArchivedListings()
@@ -475,20 +483,20 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(Edit), new { id });
     }
 
-    // USUNIĘCIE ZDJĘCIA  // [NOWE] wariant 1
+    // USUNIĘCIE ZDJĘCIA  
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteImage(int id, int imageId)
     {
         var uid = _userManager.GetUserId(User)!;
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
         IQueryable<PropertyImage> q = _context.PropertyImage
             .Include(i => i.Property)
-            .Where(i => i.Id == imageId && i.PropertyId == id); // [NOWE]
+            .Where(i => i.Id == imageId && i.PropertyId == id); 
 
-        if (!isAdmin) q = q.Where(i => i.Property.UserId == uid); // [NOWE]
+        if (!isAdmin) q = q.Where(i => i.Property.UserId == uid);
 
         var img = await q.FirstOrDefaultAsync();
         if (img == null) return NotFound();
@@ -521,15 +529,15 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // DATY (lista próśb dla ogłoszenia)  // [NOWE] wariant 1
+    // DATY (lista próśb dla ogłoszenia) 
     [Authorize]
     public async Task<IActionResult> Dates(int id)
     {
         var uid = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
-        IQueryable<Property> pq = _context.Property.Where(p => p.Id == id); // [NOWE]
-        if (!isAdmin) pq = pq.Where(p => p.UserId == uid);                 // [NOWE]
+        IQueryable<Property> pq = _context.Property.Where(p => p.Id == id); 
+        if (!isAdmin) pq = pq.Where(p => p.UserId == uid);                 
 
         var property = await pq.Include(p => p.User).FirstOrDefaultAsync();
         if (property == null) return NotFound();

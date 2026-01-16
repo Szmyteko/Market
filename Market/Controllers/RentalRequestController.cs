@@ -120,7 +120,7 @@ public class RentalRequestController : Controller
             .Include(r => r.Property)
             .Where(r => r.RequesterId == userId)
             .OrderByDescending(r => r.CreatedUtc)
-            .AsNoTracking() // [NOWE]
+            .AsNoTracking()
             .ToListAsync();
 
         return View(reqs);
@@ -132,14 +132,14 @@ public class RentalRequestController : Controller
     public async Task<IActionResult> OwnerInbox()
     {
         var ownerId = _userManager.GetUserId(User)!;
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
         IQueryable<RentalRequest> q = _context.RentalRequest
             .Include(r => r.Property)
             .Include(r => r.Requester)
-            .Where(r => r.Status == RentalRequestStatus.Pending); // [NOWE] baza
+            .Where(r => r.Status == RentalRequestStatus.Pending); 
 
-        if (!isAdmin) // [NOWE] filtr własności tylko dla nie-admina
+        if (!isAdmin) 
             q = q.Where(r => r.Property.UserId == ownerId);
 
         var reqs = await q
@@ -157,13 +157,13 @@ public class RentalRequestController : Controller
     public async Task<IActionResult> Approve(int id, string? note)
     {
         var ownerId = _userManager.GetUserId(User)!;
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
         IQueryable<RentalRequest> q = _context.RentalRequest
             .Where(r => r.Id == id)
             .Include(r => r.Property);
 
-        if (!isAdmin) // [NOWE]
+        if (!isAdmin) 
             q = q.Where(r => r.Property.UserId == ownerId);
 
         var rr = await q.FirstOrDefaultAsync();
@@ -190,10 +190,10 @@ public class RentalRequestController : Controller
             StartDate = rr.StartDate,
             EndDate = rr.EndDate,
             UserId = rr.Property!.UserId,
-            MonthlyRent = rr.Property.RentPrice ?? 0m // jeśli brak pola, usuń
+            MonthlyRent = rr.Property.RentPrice ?? 0m 
         };
         _context.RentalAgreement.Add(agr);
-        await _context.SaveChangesAsync(); // potrzebne agr.Id
+        await _context.SaveChangesAsync(); 
 
         // harmonogram płatności (Start..End, co miesiąc)
         var amount = rr.Property.RentPrice ?? 0m;
@@ -205,7 +205,7 @@ public class RentalRequestController : Controller
                 PropertyId = rr.PropertyId,
                 RentalAgreementId = agr.Id,
                 TenantId = rr.RequesterId,
-                UserId = rr.Property.UserId, // właściciel
+                UserId = rr.Property.UserId,
                 Amount = amount,
                 Currency = "PLN",
                 DueDate = due,
@@ -221,7 +221,7 @@ public class RentalRequestController : Controller
 
         // dostępność na dziś (EndDate w RR jest wymagane)
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var activeToday = rr.StartDate <= today && today <= rr.EndDate; // [ZMIANA]
+        var activeToday = rr.StartDate <= today && today <= rr.EndDate; 
         rr.Property.IsAvailable = !activeToday && !rr.Property.IsDeleted;
 
         // odrzuć inne nakładające się prośby
@@ -255,13 +255,13 @@ public class RentalRequestController : Controller
     public async Task<IActionResult> Reject(int id, string? note)
     {
         var ownerId = _userManager.GetUserId(User)!;
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
         IQueryable<RentalRequest> q = _context.RentalRequest
             .Where(r => r.Id == id)
             .Include(r => r.Property);
 
-        if (!isAdmin) // [NOWE]
+        if (!isAdmin) 
             q = q.Where(r => r.Property.UserId == ownerId);
 
         var rr = await q.FirstOrDefaultAsync();

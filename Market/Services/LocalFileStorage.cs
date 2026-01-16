@@ -12,9 +12,11 @@ public sealed class LocalFileStorage : IFileStorage
     private readonly IWebHostEnvironment _env;
     public LocalFileStorage(IWebHostEnvironment env) => _env = env;
 
+    private string UserBaseDir(string userId) => Path.Combine(_env.ContentRootPath, "PrivateStorage", "ids", userId);
+
     public async Task<string> SaveUserDocAsync(string userId, IFormFile file, string label, CancellationToken ct)
     {
-        var baseDir = Path.Combine(_env.ContentRootPath, "PrivateStorage", "ids", userId);
+        var baseDir = UserBaseDir(userId);
         Directory.CreateDirectory(baseDir);
         var ext = Path.GetExtension(file.FileName);
         var name = $"{label}-{Guid.NewGuid()}{ext}";
@@ -28,4 +30,18 @@ public sealed class LocalFileStorage : IFileStorage
         Task.FromResult<Stream>(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
 
     public bool Exists(string path) => File.Exists(path);
+
+    public Task DeleteUserDocsAsync(string userId, CancellationToken ct)
+    {
+       
+        ct.ThrowIfCancellationRequested();
+
+        var dir = UserBaseDir(userId);
+        if (Directory.Exists(dir))
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+
+        return Task.CompletedTask;
+    }
 }

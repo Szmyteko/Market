@@ -23,7 +23,7 @@ public class VerificationRequest
     public string? RejectReason { get; set; }
 }
 
-// szybki lookup do badge
+
 public class UserVerification
 {
     [Key] public string UserId { get; set; } = default!;

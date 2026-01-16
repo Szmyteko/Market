@@ -16,7 +16,7 @@ public class ProfilesController : Controller
     public ProfilesController(ApplicationDbContext ctx, UserManager<IdentityUser> um)
     { _ctx = ctx; _um = um; }
 
-    // /u/{id}  → publiczny profil właściciela
+    
     [HttpGet("/u/{id}")]
     public async Task<IActionResult> Owner(string id)
     {
@@ -30,7 +30,7 @@ public class ProfilesController : Controller
 
         var listings = allProps
             .Where(p => !p.IsDeleted && p.ApprovalStatus == ListingApprovalStatus.Approved)
-            .OrderByDescending(p => p.Id)   // jeśli masz PropertyId, zmień na p.PropertyId
+            .OrderByDescending(p => p.Id)   
             .ToList();
 
         var ver = await _ctx.UserVerification.AsNoTracking()

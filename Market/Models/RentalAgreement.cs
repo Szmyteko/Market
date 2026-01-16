@@ -12,7 +12,7 @@ public class RentalAgreement : IValidatableObject
     public int PropertyId { get; set; }
     public Property Property { get; set; } = default!;
 
-    // Najemca = IdentityUser
+   
     [Required(ErrorMessage = "Id najemcy jest wymagane.")]
     public string TenantId { get; set; } = default!;
     public IdentityUser Tenant { get; set; } = default!;
@@ -28,7 +28,7 @@ public class RentalAgreement : IValidatableObject
     [Range(0, int.MaxValue, ErrorMessage = "Czynsz musi być większy lub równy zero.")]
     public decimal MonthlyRent { get; set; }
 
-    // Właściciel lokalu (IdentityUser)
+   
     [Required]
     public string UserId { get; set; } = default!;
     public IdentityUser User { get; set; } = default!;

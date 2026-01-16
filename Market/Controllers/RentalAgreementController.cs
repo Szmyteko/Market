@@ -18,13 +18,13 @@ public class RentalAgreementController : Controller
         _userManager = userManager;
     }
 
-    // Lista wszystkich umów (np. dla admina)
+    // Lista wszystkich umów 
     public async Task<IActionResult> Index()
     {
         var agreements = await _context.RentalAgreement
             .Include(r => r.Property)
             .Include(r => r.Tenant)
-            .Include(r => r.User) // właściciel
+            .Include(r => r.User) 
             .ToListAsync();
 
         return View(agreements);
@@ -60,7 +60,7 @@ public class RentalAgreementController : Controller
         if (property.ApprovalStatus != ListingApprovalStatus.Approved)
             return BadRequest("Lokal oczekuje na akceptację administratora.");
 
-        var userId = _userManager.GetUserId(User); // najemca = zalogowany użytkownik
+        var userId = _userManager.GetUserId(User);
 
         var newRentalAgreement = new RentalAgreement
         {
@@ -71,7 +71,7 @@ public class RentalAgreementController : Controller
                 : rentalAgreement.StartDate,
             EndDate = rentalAgreement.EndDate,
             MonthlyRent = property.RentPrice ?? 0,
-            UserId = property.UserId // właściciel lokalu
+            UserId = property.UserId 
         };
 
         property.IsAvailable = false; // lokal zajęty
@@ -79,7 +79,7 @@ public class RentalAgreementController : Controller
         _context.RentalAgreement.Add(newRentalAgreement);
         await _context.SaveChangesAsync();
 
-        // przekierowanie do listy najemów zalogowanego użytkownika
+   
         return RedirectToAction("MyRentals", "RentalRequest");
     }
     [Authorize]
@@ -89,7 +89,7 @@ public class RentalAgreementController : Controller
 
         var archivedRentals = await _context.RentalAgreement
             .Include(r => r.Property)
-            .Include(r => r.User) // właściciel
+            .Include(r => r.User)
             .Where(r => r.TenantId == userId &&
                        (r.EndDate != null || r.Property.IsDeleted))
             .ToListAsync();

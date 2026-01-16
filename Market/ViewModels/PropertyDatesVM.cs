@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Market.Models; // dla RentalRequestStatus
+using Market.Models; 
 
 namespace Market.ViewModels
 {

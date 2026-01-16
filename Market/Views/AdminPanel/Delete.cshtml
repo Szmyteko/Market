@@ -1,17 +1,101 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
-@model Microsoft.AspNetCore.Identity.IdentityUser
+@model Market.ViewModels.AdminDeleteUserVm
 
 @{
     ViewBag.Title = "Usuń użytkownika";
-     ViewData["HidePageHeader"] = true;
+    ViewData["HidePageHeader"] = true;
 }
 
 <h2>Usuń użytkownika</h2>
 
-<p>Czy na pewno chcesz usunąć użytkownika <strong>@Model.UserName</strong>?</p>
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@e.ErrorMessage</div>
+        }
+    </div>
+}
+
+@if (Model.HasAnyRelations)
+{
+    <p>
+        Czy na pewno chcesz usunąć użytkownika <strong>@Model.User.UserName</strong>
+        i wszystkie jego powiązania?
+    </p>
+
+    <div class="alert alert-warning">
+        <strong>Powiązania znalezione w bazie:</strong>
+        <ul class="mb-0">
+            @if (Model.PropertiesOwned > 0)
+            {
+                <li>Ogłoszenia użytkownika: @Model.PropertiesOwned</li>
+            }
+            @if (Model.PropertiesApprovedAsModerator > 0)
+            {
+                <li>Ogłoszenia zatwierdzone jako Moderator/Admin: @Model.PropertiesApprovedAsModerator</li>
+            }
+            @if (Model.RentalRequestsAsRequester > 0)
+            {
+                <li>Zapytania o najem (Requester): @Model.RentalRequestsAsRequester</li>
+            }
+            @if (Model.RentalAgreementsAsOwner > 0)
+            {
+                <li>Umowy najmu jako właściciel: @Model.RentalAgreementsAsOwner</li>
+            }
+            @if (Model.RentalAgreementsAsTenant > 0)
+            {
+                <li>Umowy najmu jako najemca: @Model.RentalAgreementsAsTenant</li>
+            }
+            @if (Model.PaymentsAsOwner > 0)
+            {
+                <li>Płatności jako właściciel: @Model.PaymentsAsOwner</li>
+            }
+            @if (Model.PaymentsAsTenant > 0)
+            {
+                <li>Płatności jako najemca: @Model.PaymentsAsTenant</li>
+            }
+            @if (Model.MaintenanceRequests > 0)
+            {
+                <li>Zgłoszenia serwisowe: @Model.MaintenanceRequests</li>
+            }
+            @if (Model.MessagesSent > 0)
+            {
+                <li>Wiadomości wysłane: @Model.MessagesSent</li>
+            }
+            @if (Model.ConversationMemberships > 0)
+            {
+                <li>Członkostwo w rozmowach: @Model.ConversationMemberships</li>
+            }
+            @if (Model.VerificationRequests > 0)
+            {
+                <li>Wnioski weryfikacyjne: @Model.VerificationRequests</li>
+            }
+            @if (Model.HasUserVerificationRow)
+            {
+                <li>Rekord UserVerification: tak</li>
+            }
+        </ul>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Co zrobi system po potwierdzeniu:</strong>
+        <ul class="mb-0">
+            <li>Usunie konto (AspNetUsers) i dane logowania/role/claims.</li>
+            <li>Usunie dokumenty weryfikacyjne użytkownika (PrivateStorage).</li>
+            <li>Ogłoszenia użytkownika zarchiwizuje (IsDeleted=true) i przypisze do użytkownika technicznego <code>[USUNIETY]</code>.</li>
+            <li>Umowy, płatności, wiadomości i zgłoszenia serwisowe zachowa, ale przypisze do <code>[USUNIETY]</code> – żeby nie psuć widoków drugiej strony.</li>
+        </ul>
+    </div>
+}
+else
+{
+    <p>Czy na pewno chcesz usunąć użytkownika <strong>@Model.User.UserName</strong>?</p>
+}
 
 <form asp-action="DeleteConfirmed" method="post">
-    <input type="hidden" name="id" value="@Model.Id" />
+    <input type="hidden" name="id" value="@Model.User.Id" />
     <button type="submit" class="btn btn-danger">Usuń</button>
     <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
 </form>

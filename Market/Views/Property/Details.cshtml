@@ -7,6 +7,7 @@
     var meId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var isLogged = User.Identity?.IsAuthenticated == true;
     var isOwner = isLogged && Model.UserId == meId;
+    var isAdmin = User.IsInRole("Admin");
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -175,7 +176,7 @@
 
 <div class="mb-3">
     <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
-    @if (isOwner)
+    @if (isOwner || isAdmin)
     {
         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edytuj</a>
         <form asp-action="Delete" method="post" class="d-inline">
