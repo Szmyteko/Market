@@ -19,7 +19,6 @@ public class MaintenanceController : Controller
         _userManager = userManager;
     }
 
-    // Lista wszystkich moich zg³oszeñ (jako najemca)
     public async Task<IActionResult> Index()
     {
         var userId = _userManager.GetUserId(User)!;
@@ -33,7 +32,7 @@ public class MaintenanceController : Controller
         return View(list);
     }
 
-    // Formularz dodania nowego zg³oszenia serwisowego do lokalu
+
     public IActionResult Create(int propertyId)
     {
         var model = new MaintenanceRequest
@@ -60,7 +59,7 @@ public class MaintenanceController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // Zg³oszenia do moich nieruchomoœci (jako w³aœciciel)
+    // Zg³oszenia do moich nieruchomoœci 
     public async Task<IActionResult> OwnerIndex()
     {
         var ownerId = _userManager.GetUserId(User)!;

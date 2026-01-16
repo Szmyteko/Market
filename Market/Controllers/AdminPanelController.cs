@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Market.Controllers;
 
-[Authorize(Roles = "Admin,Moderator")]
+[Authorize(Roles = "Admin")]
 public class AdminPanelController : Controller
 {
     private readonly UserManager<IdentityUser> _userManager;
@@ -35,7 +35,7 @@ public class AdminPanelController : Controller
         _fileStorage = fileStorage;
     }
 
-    // Techniczny użytkownik, pod którego przepinamy historię (żeby nie psuć widoków innych osób)
+   
     private const string DeletedUserEmail = "deleted-user@market.local";
     private const string DeletedUserUserName = "deleted_user";
 
@@ -47,7 +47,7 @@ public class AdminPanelController : Controller
 
         var u = new IdentityUser
         {
-            UserName = DeletedUserUserName, // musi spełniać AllowedUserNameCharacters
+            UserName = DeletedUserUserName, 
             Email = DeletedUserEmail,
             EmailConfirmed = true,
             LockoutEnabled = true
@@ -66,7 +66,7 @@ public class AdminPanelController : Controller
         // blokada konta (żeby nikt się nie logował)
         await _userManager.SetLockoutEndDateAsync(u, DateTimeOffset.MaxValue);
 
-        // U Ciebie jest tabela UserVerification (1 rekord per user) – zapewnij spójność
+     
         if (!await _context.UserVerification.AnyAsync(x => x.UserId == u.Id))
         {
             _context.UserVerification.Add(new UserVerification
@@ -184,7 +184,7 @@ public class AdminPanelController : Controller
         return View();
     }
 
-    // ====== DELETE (GET) – pokazuje VM z licznikami powiązań ======
+   
     public async Task<IActionResult> Delete(string id)
     {
         if (string.IsNullOrEmpty(id))
@@ -202,7 +202,7 @@ public class AdminPanelController : Controller
         return View(vm);
     }
 
-    // ====== DELETE (POST) – świeży user usuwa się normalnie, a powiązany: przepinamy historię i usuwamy konto ======
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(string id)
@@ -232,14 +232,14 @@ public class AdminPanelController : Controller
             return View("Delete", vm);
         }
 
-        // Użytkownik ma powiązania: przepnij dane na [USUNIETY], usuń co trzeba i usuń konto
+
         var deletedUser = await GetOrCreateDeletedUserAsync();
         var nowUtc = DateTime.UtcNow;
 
         await using var tx = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1) Weryfikacje: usuń pliki po ścieżkach z bazy + usuń rekordy
+           
             var vreqs = await _context.VerificationRequests.Where(v => v.UserId == id).ToListAsync();
             foreach (var v in vreqs)
             {
@@ -260,12 +260,12 @@ public class AdminPanelController : Controller
 
             await _context.SaveChangesAsync();
 
-            // 2) Moderacja: ApprovedByUserId -> null (żeby nie blokowało delete)
+           
             await _context.Property
                 .Where(p => p.ApprovedByUserId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.ApprovedByUserId, (string?)null));
 
-            // 3) Ogłoszenia właściciela: archiwizuj + przepnij Ownera na [USUNIETY]
+           
             await _context.Property
                 .Where(p => p.UserId == id)
                 .ExecuteUpdateAsync(s => s
@@ -274,12 +274,12 @@ public class AdminPanelController : Controller
                     .SetProperty(p => p.DeletedUtc, nowUtc)
                     .SetProperty(p => p.IsAvailable, false));
 
-            // 4) RentalRequest jako requester: usuń (po usunięciu konta i tak nie ma sensu)
+           
             await _context.RentalRequest
                 .Where(r => r.RequesterId == id)
                 .ExecuteDeleteAsync();
 
-            // 5) Umowy: przepnij (historia ma zostać dla drugiej strony)
+           
             await _context.RentalAgreement
                 .Where(a => a.UserId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.UserId, deletedUser.Id));
@@ -288,7 +288,7 @@ public class AdminPanelController : Controller
                 .Where(a => a.TenantId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.TenantId, deletedUser.Id));
 
-            // 6) Płatności: przepnij
+        
             await _context.Payment
                 .Where(p => p.UserId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.UserId, deletedUser.Id));
@@ -297,22 +297,20 @@ public class AdminPanelController : Controller
                 .Where(p => p.TenantId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.TenantId, deletedUser.Id));
 
-            // 7) Zgłoszenia serwisowe: przepnij
             await _context.MaintenanceRequest
                 .Where(m => m.UserId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(m => m.UserId, deletedUser.Id));
 
-            // 8) Wiadomości: przepnij nadawcę
+          
             await _context.Messages
                 .Where(m => m.SenderId == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(m => m.SenderId, deletedUser.Id));
 
-            // 9) Członkostwo w rozmowach: usuń (żeby nie zostawiać “martwego” członka)
+          
             await _context.ConversationMembers
                 .Where(m => m.UserId == id)
                 .ExecuteDeleteAsync();
 
-            // 10) Usuń konto Identity (AspNetUsers + powiązane identity tables)
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
             {

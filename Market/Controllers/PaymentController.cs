@@ -44,17 +44,16 @@ public class PaymentController : Controller
         return View(items);
     }
 
-    // Właściciel: płatności dla moich lokali
     [Authorize]
     public async Task<IActionResult> Owner()
     {
         var uid = _um.GetUserId(User)!;
-        var isAdmin = User.IsInRole("Admin"); // [NOWE] rola poza LINQ
+        var isAdmin = User.IsInRole("Admin"); 
 
         IQueryable<Payment> q = _ctx.Payment;
 
         if (!isAdmin)
-            q = q.Where(p => p.UserId == uid); // [NOWE] filtr własności tylko dla nie-admina
+            q = q.Where(p => p.UserId == uid); 
 
         var items = await q
             .Include(p => p.Property)
@@ -66,18 +65,17 @@ public class PaymentController : Controller
         return View(items);
     }
 
-    // Właściciel/Admin: oznacz jako opłacone
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkPaid(int id)
     {
         var uid = _um.GetUserId(User)!;
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin"); 
 
-        IQueryable<Payment> q = _ctx.Payment.Where(p => p.Id == id); // [NOWE]
+        IQueryable<Payment> q = _ctx.Payment.Where(p => p.Id == id); 
         if (!isAdmin)
-            q = q.Where(p => p.UserId == uid); // [NOWE]
+            q = q.Where(p => p.UserId == uid); 
 
         var pay = await q.FirstOrDefaultAsync();
         if (pay == null) return NotFound();
@@ -89,7 +87,7 @@ public class PaymentController : Controller
         return RedirectToAction(nameof(Owner));
     }
 
-    // Najemca: opłać (symulacja)
+    //(symulacja)
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]

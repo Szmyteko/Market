@@ -219,12 +219,11 @@ public class RentalRequestController : Controller
         rr.Status = RentalRequestStatus.Approved;
         rr.OwnerDecisionNote = note;
 
-        // dostępność na dziś (EndDate w RR jest wymagane)
+        // dostępność na dziś 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var activeToday = rr.StartDate <= today && today <= rr.EndDate; 
         rr.Property.IsAvailable = !activeToday && !rr.Property.IsDeleted;
 
-        // odrzuć inne nakładające się prośby
         var conflicting = await _context.RentalRequest
             .Where(x => x.PropertyId == rr.PropertyId &&
                         x.Id != rr.Id &&
@@ -237,7 +236,7 @@ public class RentalRequestController : Controller
         return RedirectToAction(nameof(OwnerInbox));
     }
 
-    // helper
+
     private static DateOnly AddMonthsSafe(DateOnly d, int months)
     {
         int y = d.Year;

@@ -15,7 +15,7 @@ public class ConversationsController : Controller
     private readonly UserManager<IdentityUser> _um;
     public ConversationsController(ApplicationDbContext db, UserManager<IdentityUser> um) { _db = db; _um = um; }
 
-    // Lista wątków
+
     public async Task<IActionResult> Index()
     {
         var me = _um.GetUserId(User)!;
@@ -48,14 +48,14 @@ public class ConversationsController : Controller
         return View(mine);
     }
 
-    // Utwórz lub znajdź rozmowę z użytkownikiem i przejdź do wątku
+  
     [HttpPost]
     public async Task<IActionResult> Start(string toUserId)
     {
         var me = _um.GetUserId(User)!;
         if (string.IsNullOrWhiteSpace(toUserId) || toUserId == me) return RedirectToAction(nameof(Index));
 
-        // znajdź wspólny wątek
+        
         var myConvIds = await _db.ConversationMembers.Where(m => m.UserId == me).Select(m => m.ConversationId).ToListAsync();
         var convId = await _db.ConversationMembers
             .Where(m => m.UserId == toUserId && myConvIds.Contains(m.ConversationId))
@@ -81,7 +81,6 @@ public class ConversationsController : Controller
         return RedirectToAction(nameof(Thread), new { id = conv.Id });
     }
 
-    // Widok wątku
     [HttpGet]
     public async Task<IActionResult> Thread(Guid id)
     {
@@ -99,7 +98,6 @@ public class ConversationsController : Controller
             .Include(x => x.Sender)
             .ToListAsync();
 
-        // oznacz przeczytane
         member.LastReadUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -107,7 +105,6 @@ public class ConversationsController : Controller
         return View(vm);
     }
 
-    // Wysyłka wiadomości
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Send(Guid conversationId, string body)
     {
@@ -120,7 +117,6 @@ public class ConversationsController : Controller
         _db.Messages.Add(new Message { ConversationId = conversationId, SenderId = me, Body = body.Trim(), CreatedUtc = DateTime.UtcNow });
         await _db.SaveChangesAsync();
 
-        // odśwież last read nadawcy
         var my = await _db.ConversationMembers.FirstAsync(m => m.ConversationId == conversationId && m.UserId == me);
         my.LastReadUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();

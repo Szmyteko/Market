@@ -100,7 +100,7 @@ namespace Market.Areas.Identity.Pages.Account
             await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
             user.UserName = Input.UserName;
             user.PhoneNumber = Input.PhoneNumber;
-            user.EmailConfirmed = true; // bo w Program.cs masz RequireConfirmedAccount = true
+            user.EmailConfirmed = true; 
 
             var result = await _userManager.CreateAsync(user, Input.Password);
 
@@ -108,7 +108,7 @@ namespace Market.Areas.Identity.Pages.Account
             {
                 _logger.LogInformation("Nowy użytkownik został utworzony.");
 
-                // DODAWANIE ROLI — NAZWA MUSI BYĆ IDENTYCZNA JAK W SEEDERZE
+            
                 await _userManager.AddToRoleAsync(user, "User");
 
                 await _signInManager.SignInAsync(user, isPersistent: false);

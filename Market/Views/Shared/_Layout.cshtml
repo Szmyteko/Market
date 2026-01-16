@@ -60,19 +60,24 @@
                         </li>
                     }
 
-                    @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
-                    {
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="adminDrop" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Administracja
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="adminDrop">
-                                <li><a class="dropdown-item" asp-controller="AdminModeration" asp-action="Queue">Moderacja ogłoszeń</a></li>
-                                <li><a class="dropdown-item" asp-controller="AdminUserVerification" asp-action="Index">Weryfikacje</a></li>
-                                <li><a class="dropdown-item" asp-controller="AdminPanel" asp-action="Index">Panel administracyjny</a></li>
-                            </ul>
-                        </li>
-                    }
+                   @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="adminDrop" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Administracja
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="adminDrop">
+            <li><a class="dropdown-item" asp-controller="AdminModeration" asp-action="Queue">Moderacja ogłoszeń</a></li>
+            <li><a class="dropdown-item" asp-controller="AdminUserVerification" asp-action="Index">Weryfikacje</a></li>
+
+            @if (User.IsInRole("Admin"))
+            {
+                <li><hr class="dropdown-divider" /></li>
+                <li><a class="dropdown-item" asp-controller="AdminPanel" asp-action="Index">Panel administracyjny</a></li>
+            }
+        </ul>
+    </li>
+}
                 </ul>
 
                 <partial name="_LoginPartial" />

@@ -36,7 +36,7 @@ namespace Market.Areas.Identity.Pages.Account
         {
             [Required]
             [Display(Name = "Email lub nazwa użytkownika")]
-            public string Login { get; set; }   // ← zamiast Email
+            public string Login { get; set; }  
 
             [Required]
             [DataType(DataType.Password)]
@@ -64,7 +64,7 @@ namespace Market.Areas.Identity.Pages.Account
 
             if (!ModelState.IsValid) return Page();
 
-            // rozpoznaj e-mail vs login
+           
             IdentityUser user = Input.Login.Contains("@")
                 ? await _userManager.FindByEmailAsync(Input.Login)
                 : await _userManager.FindByNameAsync(Input.Login);
@@ -75,7 +75,7 @@ namespace Market.Areas.Identity.Pages.Account
                 return Page();
             }
 
-            // jeśli wymagane potwierdzenie konta
+       
             if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
             {
                 ModelState.AddModelError(string.Empty, "Potwierdź adres e-mail.");

@@ -25,7 +25,7 @@ public class PropertyController : Controller
         _userManager = userManager;
     }
 
-    // LISTA OGŁOSZEŃ (publiczna) - tylko zatwierdzone
+    
     [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
@@ -103,7 +103,7 @@ public class PropertyController : Controller
         return View(property);
     }
 
-    // UTWÓRZ OGŁOSZENIE (GET)
+
     [Authorize]
     public IActionResult Create() => View(new Property());
 
@@ -147,7 +147,7 @@ public class PropertyController : Controller
         return View(properties);
     }
 
-    // DODAJ OGŁOSZENIE (POST)
+  
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -198,16 +198,15 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // EDYCJA (GET) 
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> Edit(int id)
     {
         var userId = _userManager.GetUserId(User);
-        var isAdmin = User.IsInRole("Admin"); // [NOWE]
+        var isAdmin = User.IsInRole("Admin");
 
-        IQueryable<Property> q = _context.Property.Where(p => p.Id == id); // [NOWE]
-        if (!isAdmin) q = q.Where(p => p.UserId == userId);                // [NOWE]
+        IQueryable<Property> q = _context.Property.Where(p => p.Id == id);
+        if (!isAdmin) q = q.Where(p => p.UserId == userId);                
 
         var property = await q
             .Include(p => p.RentalAgreements.Where(ra => ra.EndDate == null))
@@ -234,7 +233,7 @@ public class PropertyController : Controller
         return View(dto);
     }
 
-    // EDYCJA (POST)  //
+    // EDYCJA (POST)  
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -297,7 +296,7 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(Edit), new { id = propertyId });
     }
 
-    // USUŃ OGŁOSZENIE (soft delete)
+    // USUŃ OGŁOSZENIE 
     [HttpPost, ActionName("Delete")]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -312,7 +311,7 @@ public class PropertyController : Controller
 
         var isOwner = property.UserId == userId;
 
-        // właściciel albo admin
+      
         if (!isAdmin && !isOwner)
             return Forbid();
 
@@ -325,7 +324,7 @@ public class PropertyController : Controller
         return RedirectToAction(isOwner ? nameof(MyListings) : nameof(Index));
     }
 
-    // PRZYWRÓĆ OGŁOSZENIE  
+   
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -357,7 +356,7 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings), new { filter = "pending" });
     }
 
-    // ZGŁOSZENIE SERWISOWE (tworzenie)
+   
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateServiceRequest(int propertyId, string description)
@@ -401,7 +400,7 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // ARCHIWUM (alias)  
+    // ARCHIWUM  
     [Authorize]
     [HttpGet]
     public IActionResult ArchivedListings()
@@ -470,7 +469,7 @@ public class PropertyController : Controller
 
         if (saved > 0)
         {
-            prop.ApprovalStatus = ListingApprovalStatus.Pending; // „Oczekujące”
+            prop.ApprovalStatus = ListingApprovalStatus.Pending; 
             prop.UpdatedUtc = DateTime.UtcNow;
             TempData["RequestOk"] = $"Dodano {saved} plik(ów). Ogłoszenie ustawiono na Oczekujące.";
         }
@@ -529,7 +528,7 @@ public class PropertyController : Controller
         return RedirectToAction(nameof(MyListings));
     }
 
-    // DATY (lista próśb dla ogłoszenia) 
+    // DATY 
     [Authorize]
     public async Task<IActionResult> Dates(int id)
     {
