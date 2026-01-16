@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Market.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Moderator")]
 public class AdminPanelController : Controller
 {
     private readonly UserManager<IdentityUser> _userManager;
@@ -122,14 +122,20 @@ public class AdminPanelController : Controller
     {
         var users = await _userManager.Users.ToListAsync();
 
-        var usersWithRoles = await Task.WhenAll(users.Select(async user => new
+        var usersWithRoles = new List<object>(users.Count);
+        foreach (var user in users)
         {
-            User = user,
-            Roles = await _userManager.GetRolesAsync(user)
-        }));
+            var roles = await _userManager.GetRolesAsync(user);
+            usersWithRoles.Add(new
+            {
+                User = user,
+                Roles = roles
+            });
+        }
 
         return View(usersWithRoles);
     }
+
 
     public IActionResult Create()
     {
@@ -209,7 +215,7 @@ public class AdminPanelController : Controller
 
         var vm = await BuildDeleteVmAsync(user);
 
-        // "Świeży" użytkownik – kasuj jak dotychczas
+       
         if (!vm.HasAnyRelations)
         {
             var resultFresh = await _userManager.DeleteAsync(user);
@@ -237,7 +243,7 @@ public class AdminPanelController : Controller
             var vreqs = await _context.VerificationRequests.Where(v => v.UserId == id).ToListAsync();
             foreach (var v in vreqs)
             {
-                // u Ciebie ścieżki wyglądają na pełne ścieżki z dysku (LocalFileStorage zapisuje full path)
+              
                 if (!string.IsNullOrWhiteSpace(v.FrontPath) && System.IO.File.Exists(v.FrontPath))
                     System.IO.File.Delete(v.FrontPath);
 
